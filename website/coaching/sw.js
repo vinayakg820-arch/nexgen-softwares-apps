@@ -1,0 +1,11 @@
+const V='2.2.1',C='mauli-'+V,A=['./','index.html','manifest.json','icon-192.png','icon-512.png','icon-maskable-512.png','badge-96.png','notify-banner.png'];
+self.addEventListener('install',e=>e.waitUntil(caches.open(C).then(c=>c.addAll(A.map(u=>new Request(u,{cache:'reload'})))).then(()=>self.skipWaiting())));
+self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!=C).map(x=>caches.delete(x)))).then(()=>clients.claim())));
+self.addEventListener('fetch',e=>{const r=e.request,u=new URL(r.url);if(r.method!='GET'||!/^https?:$/.test(u.protocol)||u.hostname.endsWith('supabase.co')||/(^|\.)(youtube|youtube-nocookie|ytimg|googlevideo)\.com$/.test(u.hostname)||u.pathname.endsWith('version.json'))return;const same=u.origin==location.origin;e.respondWith(fetch(same?new Request(r.url,{cache:'no-cache',credentials:'same-origin'}):r).then(x=>{if(x.ok||x.type=='opaque'){const y=x.clone();caches.open(C).then(c=>c.put(r,y))}return x}).catch(()=>caches.match(r).then(m=>m||caches.match('index.html'))))});
+/* Push notifications: arrive in the notification centre even when the phone is locked and the app is closed */
+self.addEventListener('push',e=>{let d={};try{d=e.data?e.data.json():{}}catch(x){d={body:e.data?e.data.text():''}}
+const o={body:d.body||'',icon:'icon-192.png',badge:'badge-96.png',image:'notify-banner.png',tag:d.tag||'mauli',renotify:true,silent:false,requireInteraction:false,vibrate:[400,150,400,150,900,150,400],timestamp:Date.now(),actions:[{action:'open',title:'📲 Open app'}],data:{url:d.url||'./'}};
+e.waitUntil(Promise.all([
+ self.registration.showNotification(d.title||'Mauli Coaching Classes',o).catch(()=>self.registration.showNotification(d.title||'Mauli Coaching Classes',{body:o.body,icon:o.icon,data:o.data})),
+ clients.matchAll({type:'window',includeUncontrolled:true}).then(cs=>cs.forEach(c=>c.postMessage({t:'push',d})))]))});
+self.addEventListener('notificationclick',e=>{e.notification.close();const u=new URL((e.notification.data&&e.notification.data.url)||'./',self.registration.scope).href;e.waitUntil(clients.matchAll({type:'window',includeUncontrolled:true}).then(cs=>{for(const c of cs){if(c.url.startsWith(self.registration.scope)&&'focus'in c){if('navigate'in c)c.navigate(u).catch(()=>{});return c.focus()}}return clients.openWindow(u)}))});

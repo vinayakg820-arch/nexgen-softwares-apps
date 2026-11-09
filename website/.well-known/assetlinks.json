@@ -1,0 +1,62 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.nexgensoftwares.portal",
+      "sha256_cert_fingerprints": [
+        "79:5F:3A:44:DE:F1:13:1F:4B:DE:93:69:BA:03:CC:DA:17:FD:7D:A8:0A:25:A7:BB:0C:31:FE:4B:E7:AA:8A:73"
+      ]
+    }
+  },
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.nexgensoftwares.billing",
+      "sha256_cert_fingerprints": [
+        "79:5F:3A:44:DE:F1:13:1F:4B:DE:93:69:BA:03:CC:DA:17:FD:7D:A8:0A:25:A7:BB:0C:31:FE:4B:E7:AA:8A:73"
+      ]
+    }
+  },
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.nexgensoftwares.coaching",
+      "sha256_cert_fingerprints": [
+        "79:5F:3A:44:DE:F1:13:1F:4B:DE:93:69:BA:03:CC:DA:17:FD:7D:A8:0A:25:A7:BB:0C:31:FE:4B:E7:AA:8A:73"
+      ]
+    }
+  },
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.nexgensoftwares.leadmaster",
+      "sha256_cert_fingerprints": [
+        "79:5F:3A:44:DE:F1:13:1F:4B:DE:93:69:BA:03:CC:DA:17:FD:7D:A8:0A:25:A7:BB:0C:31:FE:4B:E7:AA:8A:73"
+      ]
+    }
+  },
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.nexgensoftwares.society",
+      "sha256_cert_fingerprints": [
+        "79:5F:3A:44:DE:F1:13:1F:4B:DE:93:69:BA:03:CC:DA:17:FD:7D:A8:0A:25:A7:BB:0C:31:FE:4B:E7:AA:8A:73"
+      ]
+    }
+  }
+]

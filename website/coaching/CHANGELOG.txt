@@ -1,0 +1,180 @@
+MAULI COACHING CLASSES - VERSION HISTORY (आवृत्त्यांची यादी)
+=============================================================
+
+सर्वात नवीन (LATEST):  v2.2.1   -   2 Nov 2026
+फाईल:  Mauli-Coaching-v2.2.1.zip
+
+
+अपडेट कसे करायचे? (फक्त 4 पायऱ्या)
+-------------------------------------
+1. सर्वात नवीन zip (वर लिहिलेली) unzip करा.
+2. EdgeOne मध्ये सर्व फाईल्स जुन्यांच्या जागी अपलोड करा.
+   -> version.json सुद्धा अपलोड करायला विसरू नका!
+3. फोनवर ॲप उघडा. 1-2 मिनिटांत "New update available" popup येईल.
+4. "Update now" दाबा. ॲप आपोआप रिफ्रेश होईल आणि "Congratulations!" दिसेल.
+
+महत्त्वाचे:
+ * v1.3.0 पासून सर्व फोनवर update popup आपोआप येतो. (तुमचा फोन v1.3.0 वर असल्यास
+   v1.4.0 चा popup येईल.)
+ * फोन बंद असेल तर popup ॲप पुढच्या वेळी उघडल्यावर येईल.
+ * "Later" दाबले तर 30 मिनिटांनी पुन्हा विचारेल.
+   More -> "Check for updates" दाबून कधीही स्वतः तपासता येते.
+
+
+आवृत्ती क्रमांक कसा वाचायचा?  (उदा. v2.0.0)
+---------------------------------------------
+ 1.  = मोठा बदल (संपूर्ण नवीन रूप)
+ .3  = नवीन सुविधा (feature) जोडली
+ .0  = छोटी दुरुस्ती (bug fix)  ->  1.3.1, 1.3.2 ...
+
+
+जुन्या आवृत्त्या सुरक्षित (Backup)
+-----------------------------------
+प्रत्येक आवृत्तीची वेगळी zip या folder मध्ये आहे. काही बिघडले तर जुनी zip
+अपलोड करून मागे जाता येते. (database मधला डेटा बदलत नाही.)
+ "latest" folder = सर्वात नवीन आवृत्तीच्या फाईल्स (थेट अपलोडसाठी).
+
+
+v2.2.1  (2 Nov 2026)  -  नवीन APK ची गरज नाही
+  + आधीच install केलेल्या Android app मध्येच (फक्त ही zip upload करून) "Notifications are on"
+    message लपवण्याची पायरी येते: Open settings → "Background connection" OFF → Done.
+  + v2.2.0 मधील सर्व fee बदल यात आहेत.
+  (नियम: पुढचे सगळे updates फक्त zip ने. APK फक्त app चा icon / आवाज / Android चा
+   मूळ भाग बदलला तरच — तेव्हा मी स्वतः सांगेन.)
+
+v2.2.0  (2 Nov 2026)  -  Fees महिन्यानुसार, Paid/Unpaid edit, "कृपया फी भरा" popup
+  + Monthly fee आता प्रत्येक महिन्याचा वेगळा तपासला जातो. त्या महिन्याची fee भरली
+    तरच "Paid" दिसते. (आधी: मागच्या महिन्यांचे जास्तीचे पैसे या महिन्यात मोजले जात
+    होते, म्हणून न भरलेले पण "Paid" दिसत होते.)
+  + Admin: Fees मध्ये प्रत्येक card वर "✔ Mark paid" / "✖ Mark unpaid" बटण.
+    "Update / edit fee" उघडल्यावर "Month-wise status" (प्रत्येक महिना Paid/Unpaid) आणि
+    प्रत्येक payment वर ✏️ Edit (रक्कम, महिना, तारीख) व 🗑 Delete.
+  + प्रत्येक महिन्याच्या 1 तारखेपासून fee due. भरेपर्यंत रोज 2 वेळा (सकाळी 10, संध्याकाळी 6)
+    push notification: "fee pending ... कृपया फी भरा".
+  + Student / पालक app उघडताच animated popup: "Please Pay Fees · कृपया फी भरा",
+    किती महिने आणि किती रक्कम बाकी, "View fees" बटण.
+  + Android app (नवीन APK सोबत): सतत दिसणारा "Notifications are on" message लपवता येतो
+    (पहिल्यांदा app एक पायरी दाखवते). Notifications बंद केले / Class alerts बंद केले
+    किंवा background (battery) परवानगी नसेल तर app चालत नाही — आधी चालू करावे लागते.
+
+v2.1.0  (31 Oct 2026)  -  Android app: Firebase शिवाय notifications (फक्त Supabase)
+  + Android app मध्ये आता Google / Firebase लागत नाही. App चा स्वतःचा background service
+    आपल्या Supabase server शी सतत जोडलेला राहतो आणि app बंद / फोन lock असतानाही
+    notification + 3 सेकंदांचा tone देतो.
+  + फोन offline असताना आलेले notifications (2 दिवसांपर्यंतचे) internet आल्यावर येतात.
+  + App मध्ये पहिल्यांदा: "Allow notifications" नंतर "Allow in background" (battery) विचारते.
+  + Notification check पानावर "Allowed to run in background" ही नवीन ओळ.
+  + Notification वर tap केल्यावर app थेट त्या पानावर (उदा. Fees) उघडते.
+  + Browser / जुने PWA app पूर्वीसारखेच चालते (त्यात काहीही बदल नाही).
+  (v2.0.0 मधील Firebase पद्धत काढून टाकली.)
+
+v2.0.0  (31 Oct 2026)  -  Native Android app support
+  + नवीन खऱ्या Android app (Mauli-Android-App) साठी तयारी: Firebase notifications,
+    app बंद / फोन lock असतानाही notification, app चा स्वतःचा 3 सेकंद tone.
+  + Android app मधून receipt / backup share किंवा save करता येते.
+  + Browser / जुने PWA app पूर्वीसारखेच चालते.
+  (Android app कसे बनवायचे: Mauli-Android-App मधील README-MARATHI.txt)
+
+v1.9.1  (31 Oct 2026)  -  Notification fix + Notification check
+  + Bug fix: "Update now" केल्यावर फोनचे notification registration पुसले जात होते
+    (त्यामुळे app परत उघडेपर्यंत notifications येत नव्हते). आता ते टिकून राहते.
+  + नवीन "🔔 Notification check" पान (Admin: More मध्ये, Student: More मध्ये):
+    "Send me a test notification" दाबा → फोन lock करा / app बंद करा → 10 सेकंदात
+    test notification येतो. न आल्यास फोन brand नुसार settings (Xiaomi, Vivo, Oppo,
+    Realme, Samsung, OnePlus...) दाखवते.
+
+v1.9.0  (31 Oct 2026)  -  Notification look & tone, Class updates badge, App Activity, Call
+  + Notifications: मोठा banner फोटो (logo सह), status bar मध्ये bell icon, "Open app" बटण,
+    3 सेकंदांचा vibrate. App उघडा असताना 3 सेकंदांचा नवीन आकर्षक tone.
+  + Class updates: नवीन update आला की tile वर लाल नंबर (उदा. 2), More वर लाल ठिपका.
+    Class updates उघडले की नंबर परत 0. नवीन updates वर "NEW".
+  + Admin → More → App Activity: आत्ता Online कोण, आज किती जणांनी वापरले, महिन्यात
+    किती वेळा उघडले, किती वेळ वापरले, किती दिवस, कोणत्या फोनवर. नावावर tap केल्यावर
+    दिवसानुसार माहिती. "Not using the app" मध्ये app न वापरणारे पालक (call बटणासह).
+    (माहिती v1.9.0 पासून जमा होते)
+  + Students: "📞 Call" बटण → Owner आणि Assistant teacher, नावावर tap केल्यावर थेट call.
+    नंबर Admin → Settings → "Call numbers for students" मध्ये भरायचे.
+  + नवीन फाईल्स: badge-96.png, notify-banner.png (त्या पण अपलोड करा)
+
+v1.8.0  (31 Oct 2026)  -  YouTube-style player, Once-a-day class in/out, More notifications
+  + Video player YouTube app सारखा: controls व्हिडिओवरच, 3 सेकंदांनी लपतात, tap केल्यावर
+    दिसतात. उजवीकडे double-tap = 10 sec पुढे, डावीकडे double-tap = 10 sec मागे
+    (परत tap केले तर 20, 30 sec...). मध्ये ⟲10 ▶ ⟳10 बटणे. Full screen / आडवा फोन
+    केल्यावर व्हिडिओ पूर्ण screen. ⤢ बटण = zoom to fill (बाजूच्या काळ्या पट्ट्या जातात).
+  + Class in / Class out: प्रत्येक batch / standard साठी दिवसातून एकदाच. झालेले बटण
+    disable होते आणि वेळ दिसते.
+  + Notifications: पहिल्यांदा login (Welcome), नवीन app update, attendance mark,
+    fee जमा, fee reminder, नवीन study material / video / note, class in / out,
+    leave approve / reject. App उघडा असताना स्वतःचा वेगळा आवाज (chime) + vibrate.
+
+v1.7.0  (31 Oct 2026)  -  Video full screen, Fee totals, Compulsory notifications
+  + Video: ⛶ बटणाने पूर्ण full screen (फोन आपोआप आडवा होतो). फोन आडवा केला तरी
+    व्हिडिओ पूर्ण screen भरतो. व्हिडिओवर double-tap केल्यानेही full screen.
+    (manifest मध्ये portrait lock काढला - त्यामुळे app आता फिरू शकते)
+  + Fees: Monthly / Yearly / All plans प्रमाणे Total fees, Total collected,
+    Total balance वेगवेगळे दिसतात. Monthly आणि All मध्ये "This month" चे आकडेही.
+    Batch / standard / search filter प्रमाणे totals बदलतात.
+  + Notifications compulsory: Admin आणि विद्यार्थ्यांना "Allow" केल्याशिवाय app
+    चालत नाही. Block केले असल्यास settings मधून कसे चालू करायचे ते दाखवते.
+    (Teachers ना notifications येत नाहीत, त्यामुळे त्यांना ही अट नाही)
+
+v1.6.1  (31 Oct 2026)  -  Login page
+  + Admin login page वर email ID आधीपासून भरलेला दिसत नाही (रिकामा असतो)
+
+v1.6.0  (31 Oct 2026)  -  Daily report online, Siblings, Study material, Videos, Notifications
+  + Daily report: batch-wise / standard-wise online post. विद्यार्थ्याच्या dashboard वर
+    "Today in class" मध्ये आज काय शिकवले ते दिसते. WhatsApp पर्याय काढला.
+  + एकाच नंबरवर 2 मुले: एकच password, login नंतर "Who's checking?" profiles,
+    आणि नंतर "⇄ Switch" ने दुसऱ्या मुलाचा data.
+  + Study material: Files (PDF/Word/PPT/image, 25 MB पर्यंत), Notes, YouTube Videos.
+    व्हिडिओ ॲपमधल्याच player मध्ये चालतो (YouTube वर जात नाही, download नाही,
+    आपल्या storage मध्ये save होत नाही).
+  + Fees: Monthly / Yearly(Fixed) / All plans असे वेगळे विभाग आणि वेगळे totals.
+  + Notifications:
+      - Admin: नवीन fee approval request आणि leave request
+      - Parents: Class in / Class out (batch / standard नुसार), leave approve/reject
+      - Fee reminder: monthly fee बाकी असल्यास रोज 10:00 AM आणि 6:00 PM (fee भरेपर्यंत)
+    फोनवर एकदा "Turn on notifications" दाबून Allow करायचे.
+  + Teacher rights मध्ये नवीन "Study material".
+
+v1.5.0  (31 Oct 2026)  -  Laptop / Desktop layout
+  + लॅपटॉप / कॉम्प्युटरवर नवीन UI: डाव्या बाजूला menu (sidebar), सर्व विभाग एका क्लिकवर
+  + Overview dashboard: विद्यार्थी, fees pending, attendance, या महिन्याची जमा फी,
+    बाकी फी, batches, approval साठी वाट पाहणाऱ्या requests, आजची attendance
+  + Students / Fees / Attendance cards 2-3 columns मध्ये, forms मध्यभागी popup मध्ये
+  + मोबाईल UI पूर्वीसारखाच, डेटा सगळीकडे तोच (Supabase)
+
+v1.4.0  (30 Oct 2026)  -  Student login
+  + विद्यार्थी login: ॲप उघडल्यावर पहिल्याच screen वर "Student" -> नोंदणीकृत मोबाईल नंबर
+    टाकून verify -> पहिल्यांदा password तयार करा -> नंतर mobile + password ने login
+  + विद्यार्थ्याला नाव + Welcome, त्याची Attendance (महिन्याचे calendar), Fees (भरली की नाही)
+    आणि भरली असल्यास Receipt (PDF) दिसते
+  + Request Leave: तारखा + कारण लिहून submit -> Admin ला More -> "Leave requests" मध्ये
+    (आणि Home वर) दिसते. Admin Approve/Reject करतो, विद्यार्थ्याला status दिसतो
+  + Admin ला Students यादीत प्रत्येक विद्यार्थ्याने सेट केलेला password दिसतो, "Reset"
+    बटणाने password रीसेट करता येतो
+  + Teacher/Admin login पूर्वीसारखेच (Staff / Teacher / Admin टॅब)
+
+v1.3.0  (30 Oct 2026)  -  App updates
+  + नवीन आवृत्ती आली की ॲपमध्ये "New update available" popup
+  + "Update now" -> अपडेट झाल्यावर "Congratulations!" संदेश + काय नवीन आहे ते
+  + More मध्ये "Check for updates" आणि आवृत्ती क्रमांक
+  + प्रत्येक आवृत्तीची वेगळी zip
+
+v1.2.0  (30 Oct 2026)  -  New look + Diwali
+  + नवीन डिझाईन: नवीन फॉन्ट, animation, shadow, gloss effect
+  + दिवाळी थीम (16 Nov 2026 पर्यंत, नंतर आपोआप निळी थीम)
+  + Attendance मध्ये आधी कोणीही Present निवडलेले नाही (रिकामे), नंतर मार्क करायचे
+  + "Mark rest present" बटण आणि Present/Absent/Not marked ची मोजणी
+  (टीप: या आवृत्तीत update popup नाही)
+
+v1.1.0  (29 Oct 2026)  -  Batches
+  + Batches तयार करणे (attendance, fees, reports साठी batch filter)
+  + Fees: All / Paid / Unpaid फिल्टर
+  + Fees आणि Attendance मध्ये विद्यार्थी शोध (search)
+  + Mauli Coaching Classes चा लोगो आणि ॲप आयकॉन
+  + फोनचे Back बटण, install on home screen
+  (टीप: या आवृत्तीत update popup नाही)
+
+v1.0.0  -  Cloud launch
+  + Admin / Teacher login, activation code, fee approval, Supabase database
