@@ -1,0 +1,55 @@
+plugins { id 'com.android.application' }
+
+// One project → one APK per software. Each APK simply opens its web address,
+// so every update you upload to EdgeOne (single ZIP) reaches the phone app by itself.
+def HOST = 'nexgensoftwares.edgeone.dev'
+def apps = [
+  portal    : [id: 'com.nexgensoftwares.portal',     name: 'NexGen Softwares',         path: '/',            color: '#1e1b4b'],
+  billing   : [id: 'com.nexgensoftwares.billing',    name: 'Charvi Computers Billing', path: '/billing/',    color: '#1a6cb3'],
+  coaching  : [id: 'com.nexgensoftwares.coaching',   name: 'Mauli Coaching Classes',   path: '/coaching/',   color: '#055696'],
+  leadmaster: [id: 'com.nexgensoftwares.leadmaster', name: 'LeadMaster',               path: '/leadmaster/', color: '#0f172a'],
+  society   : [id: 'com.nexgensoftwares.society',    name: 'Society Connect',          path: '/society/',    color: '#4f46e5'],
+]
+
+android {
+  namespace 'com.nexgensoftwares.apps'
+  compileSdk 34
+
+  defaultConfig {
+    minSdk 21
+    targetSdk 34
+    versionCode 1
+    versionName '1.0.0'
+  }
+
+  flavorDimensions 'app'
+  productFlavors {
+    apps.each { key, a ->
+      create(key) {
+        dimension 'app'
+        applicationId a.id
+        resValue 'string', 'app_name', a.name
+        resValue 'color', 'brand', a.color
+        manifestPlaceholders = [launchUrl: "https://${HOST}${a.path}?src=apk", hostName: HOST]
+      }
+    }
+  }
+
+  signingConfigs {
+    release {
+      storeFile file(System.getenv('KEYSTORE_FILE') ?: 'release.jks')
+      storePassword System.getenv('KEYSTORE_PASSWORD')
+      keyAlias System.getenv('KEY_ALIAS') ?: 'nexgen'
+      keyPassword System.getenv('KEYSTORE_PASSWORD')
+    }
+  }
+  buildTypes {
+    release { signingConfig signingConfigs.release; minifyEnabled false }
+  }
+  compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+}
+
+dependencies {
+  implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.5.0'
+  implementation 'androidx.appcompat:appcompat:1.7.0'
+}

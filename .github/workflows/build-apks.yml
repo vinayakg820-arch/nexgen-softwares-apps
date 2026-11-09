@@ -1,0 +1,56 @@
+name: Build NexGen APKs
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 1 }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '17' }
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+        with: { gradle-version: '8.9' }
+      - name: Restore signing key
+        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > app/release.jks
+      - name: Build all APKs
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: nexgen
+        run: gradle --no-daemon assembleRelease
+      - name: Collect APKs
+        run: |
+          mkdir -p out
+          for f in app/build/outputs/apk/*/release/*.apk; do
+            flavor=$(basename "$(dirname "$(dirname "$f")")")
+            cp "$f" "out/NexGen-${flavor}-v1.0.0.apk"
+          done
+          ls -la out
+      - name: Save APKs to branch apk-builds (easy download)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          mkdir -p /tmp/apks && cp out/*.apk /tmp/apks/
+          git checkout --orphan apk-builds
+          git rm -rf --cached . >/dev/null
+          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp /tmp/apks/*.apk .
+          printf "Built from %s on %s\n" "$GITHUB_SHA" "$(date -u)" > BUILD.txt
+          git add *.apk BUILD.txt
+          git commit -m "APKs from ${GITHUB_SHA::7}"
+          git push -f origin apk-builds
+      - uses: actions/upload-artifact@v4
+        with: { name: nexgen-apks, path: out/*.apk }
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: apks-v1.0.0
+          name: NexGen APKs v1.0.0
+          body: |
+            One APK per software. Each opens https://nexgensoftwares.edgeone.dev/<software>/ so updates arrive by uploading the website ZIP — no reinstall.
+          files: out/*.apk
