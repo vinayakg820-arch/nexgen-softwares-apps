@@ -33,7 +33,7 @@ jobs:
           mkdir -p out
           for f in app/build/outputs/apk/*/release/*.apk; do
             flavor=$(basename "$(dirname "$(dirname "$f")")")
-            cp "$f" "out/NexGen-${flavor}-v1.0.0.apk"
+            cp "$f" "out/NexGen-${flavor}-v1.1.0.apk"
           done
           ls -la out
       - name: Save APKs to branch apk-builds (easy download)
@@ -54,8 +54,8 @@ jobs:
       - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: apks-v1.0.0
-          name: NexGen APKs v1.0.0
+          tag_name: apks-v1.1.0
+          name: NexGen APKs v1.1.0
           body: |
             One APK per software. Each opens https://nexgensoftwares.edgeone.dev/<software>/ so updates arrive by uploading the website ZIP — no reinstall.
           files: out/*.apk
