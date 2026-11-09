@@ -16,11 +16,15 @@ jobs:
       - uses: android-actions/setup-android@v3
       - uses: gradle/actions/setup-gradle@v4
         with: { gradle-version: '8.9' }
-      - name: Restore signing key
-        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > app/release.jks
+      - name: Signing key (GitHub secrets if set, otherwise signing/ folder of this private repo)
+        env:
+          KS_B64: ${{ secrets.KEYSTORE_BASE64 }}
+          KS_PASS: ${{ secrets.KEYSTORE_PASSWORD }}
+        run: |
+          if [ -n "$KS_B64" ]; then echo "$KS_B64" | base64 -d > app/release.jks; echo "KEYSTORE_PASSWORD=$KS_PASS" >> $GITHUB_ENV
+          else cp signing/nexgen-release.jks app/release.jks; echo "KEYSTORE_PASSWORD=$(tr -d '\n' < signing/keystore-password.txt)" >> $GITHUB_ENV; fi
       - name: Build all APKs
         env:
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: nexgen
         run: gradle --no-daemon assembleRelease
       - name: Collect APKs
