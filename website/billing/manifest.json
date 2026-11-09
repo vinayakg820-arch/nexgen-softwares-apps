@@ -1,7 +1,7 @@
 {
-  "name": "Charvi Computers Billing",
-  "short_name": "Charvi Computers",
-  "description": "Billing, inventory and sale records for Charvi Computers.",
+  "name": "Shubh Laxmi Billing Software",
+  "short_name": "Shubh Laxmi",
+  "description": "Billing, inventory and sale records.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
