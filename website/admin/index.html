@@ -6,7 +6,7 @@
 <title>NexGen Softwares</title>
 <meta name="theme-color" content="#1e1b4b">
 <link rel="manifest" href="manifest.json?v=203">
-<script src="../nexgen-app.js" data-app="portal" data-version="2.0.0" data-name="NexGen Softwares" data-icon="../icon-192.png" data-color="#4f46e5"></script>
+<script src="../nexgen-app.js" data-app="portal" data-version="2.1.0" data-name="NexGen Softwares" data-icon="../icon-192.png" data-color="#4f46e5"></script>
 <link rel="icon" href="../icon-192.png">
 <link rel="apple-touch-icon" href="../icon-192.png">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
@@ -248,7 +248,7 @@ pre.code{background:#0f172a;color:#e2e8f0;padding:14px;border-radius:12px;overfl
 /* =====================================================================
    NexGen Softwares – Super Admin & Customer Portal
    ===================================================================== */
-const APP_VERSION = '2.0.0';
+const APP_VERSION = '2.1.0';
 const AREA = /\/admin\//.test(location.pathname) ? 'admin' : 'portal';
 const SUPABASE_URL = 'https://nqqbduqqiwpaixmrweef.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_eKTOE3ywBI9ye02QFVDmvg_231pdTTJ';
@@ -346,7 +346,7 @@ function confirmBox(message, { okText = 'Yes', danger = false } = {}) {
 const S = { me: null, settings: {}, softwares: [], customers: [], subs: [], coupons: [] };
 const swById = id => S.softwares.find(s => s.id === id);
 const custById = id => S.customers.find(c => c.id === id);
-const portalUrl = () => (S.settings.portal_url || (location.origin + location.pathname)).replace(/index\.html$/, '');
+const portalUrl = () => (S.settings.portal_url || new URL('../', location.href).href).replace(/index\.html$/, '');   // the ONE main link for everyone
 function appUrl(sw) {
   if (sw.app_url) return sw.app_url;
   if (S.settings.base_domain && sw.subdomain) return `https://${sw.subdomain}.${S.settings.base_domain}/`;
@@ -385,7 +385,7 @@ function liveSubs(customerId) {
   return currentSubs(customerId).filter(s => ['active', 'trial', 'upcoming'].includes(subState(s)));
 }
 
-const CUST_COLS = 'id,user_id,customer_code,login_email,name,mobile,email,company_name,address,city,gstin,notes,status,last_login_at,created_at,updated_at,brand_updated_at,has_logo,is_internal';
+const CUST_COLS = 'id,user_id,customer_code,login_email,name,mobile,email,company_name,address,city,gstin,notes,status,last_login_at,created_at,updated_at,brand_updated_at,has_logo,is_internal,password_set_at,password_set_by,setup_fails';
 const BRAND_API = SUPABASE_URL + '/functions/v1/app-brand';
 const logoUrl = c => `${BRAND_API}?c=${encodeURIComponent(c.customer_code || c.tenant_code || c.code)}&logo=1&v=${c.brand_v || new Date(c.brand_updated_at || 0).getTime()}`;
 function avatarHtml(c, style = '') {
@@ -432,7 +432,7 @@ function activatedPopup(c, subs, opts = {}) {
       <div class="row"><img class="app-ic" src="${esc(iconSrc(sw?.icon))}" alt=""><div><b>${esc(sw?.name)}</b><div class="small muted">${planLabel(s.plan)}${s.plan !== 'trial' ? ' × ' + s.periods : ''} · ${fmtD(s.start_date)} → <b>${fmtD(s.end_date)}</b></div></div></div>
       <div style="text-align:right"><b>${money(s.final_amount)}</b><div>${payBadge(s.payment_status)}</div></div></div>`; }).join('');
   const msg = [`Hello ${c.name},`, '', `Your subscription is activated ✅`, ''].concat((subs || []).map(s => `• ${swById(s.software_id)?.name} – ${planLabel(s.plan)}, valid till ${fmtD(s.end_date)}`))
-    .concat(['', `Login: ${portalUrl()}`, `Login ID: ${c.customer_code}`, '', `– ${S.settings.company_name || 'NexGen Softwares'}`]).join('\n');
+    .concat(['', `Login: ${portalUrl()}`, `Email ID: ${c.email || c.customer_code}`, '', `– ${S.settings.company_name || 'NexGen Softwares'}`]).join('\n');
   const m = openModal({
     title: '&nbsp;',
     body: `<div style="text-align:center;margin-top:-8px">
@@ -488,6 +488,12 @@ async function boot() {
     renderLogin(errMsg(e));
   }
 }
+// inside the Android app (APK) a software opens in the same window, so "Super Admin" / "My softwares" switches straight back
+document.addEventListener('click', e => {
+  const a = e.target.closest && e.target.closest('a[target="_blank"]');
+  if (!a || !sessionStorage.getItem('ngs-apk')) return;
+  try { const u = new URL(a.href, location.href); if (u.origin === location.origin && !/\.apk$/i.test(u.pathname)) { e.preventDefault(); location.href = u.href; } } catch (_) { }
+}, true);
 async function enter(me) {
   S.me = me;
   if (me.role === 'super_admin' && AREA !== 'admin') { location.replace('../admin/' + location.hash); return; }
@@ -512,38 +518,112 @@ async function logout() {
   renderLogin();
 }
 
-function renderLogin(error) {
+function renderLogin(error, keepId) {
   document.title = 'Login – NexGen Softwares';
-  $('#app').innerHTML = `
-  <div class="login-wrap"><form class="login-card" id="loginForm" autocomplete="on">
-    <div class="brand"><img src="../icon-192.png" alt=""><div><h1>NexGen Softwares</h1><small>${AREA === 'admin' ? 'Super Admin' : 'Software Portal'}</small></div></div>
-    <h2>Sign in</h2>
-    <p class="sub">Admin and customers both sign in here. Your software opens automatically.</p>
-    <div class="field"><label>Email / Login ID / Mobile</label>
-      <input class="inp" id="lgId" autocomplete="username" required placeholder="e.g. NGS1001 or 98XXXXXXXX"></div>
-    <div class="field"><label>Password</label>
-      <div class="inp-group"><input class="inp" id="lgPw" type="password" autocomplete="current-password" required>
-      <button type="button" class="btn ghost" id="lgEye" aria-label="Show password"><i class="fas fa-eye"></i></button></div></div>
-    <div id="lgErr" class="coupon-msg bad" style="margin:-4px 0 12px">${error ? esc(error) : ''}</div>
-    <button class="btn primary block" id="lgBtn" type="submit"><i class="fas fa-right-to-bracket"></i> Sign in</button>
-    <p class="hint" style="text-align:center;margin:16px 0 0">v${APP_VERSION}</p>
-  </form></div>`;
-  $('#lgEye').onclick = () => { const p = $('#lgPw'); p.type = p.type === 'password' ? 'text' : 'password'; };
-  $('#loginForm').onsubmit = async e => {
-    e.preventDefault();
-    const btn = $('#lgBtn'), err = $('#lgErr');
-    btn.disabled = true; err.textContent = ''; btn.innerHTML = '<span class="spin" style="width:16px;height:16px;border-width:2px;border-color:rgba(255,255,255,.4);border-top-color:#fff"></span> Signing in…';
-    try {
-      const email = await run(sb.rpc('login_email_for', { p_identifier: $('#lgId').value }));
-      if (!email) throw new Error('No account found with this ID / mobile');
-      await run(sb.auth.signInWithPassword({ email, password: $('#lgPw').value }));
-      const me = await run(sb.rpc('my_portal', { p_login: true }));
-      await enter(me);
-    } catch (ex) {
-      err.textContent = errMsg(ex);
-      btn.disabled = false; btn.innerHTML = '<i class="fas fa-right-to-bracket"></i> Sign in';
-    }
+  const head = `<div class="brand"><img src="../icon-192.png" alt=""><div><h1>NexGen Softwares</h1><small>${AREA === 'admin' ? 'Super Admin' : 'Software Portal'}</small></div></div>`;
+  const busy = (btn, txt) => { btn.disabled = true; btn.innerHTML = `<span class="spin" style="width:16px;height:16px;border-width:2px;border-color:rgba(255,255,255,.4);border-top-color:#fff"></span> ${txt}`; };
+  const isEmail = v => /^\S+@\S+\.\S+$/.test(v.trim());
+
+  // step 1: who are you?
+  const stepId = (err, val) => {
+    $('#app').innerHTML = `<div class="login-wrap"><form class="login-card" id="loginForm" autocomplete="on">${head}
+      <h2>Sign in</h2>
+      <p class="sub">Enter your registered Email ID. Your software opens after login.</p>
+      <div class="field"><label>Email ID</label>
+        <input class="inp" id="lgId" autocomplete="username" inputmode="email" autocapitalize="none" required placeholder="name@example.com" value="${esc(val || '')}"></div>
+      <div id="lgErr" class="coupon-msg bad" style="margin:-4px 0 12px">${err ? esc(err) : ''}</div>
+      <button class="btn primary block" id="lgBtn" type="submit">Continue <i class="fas fa-arrow-right"></i></button>
+      <p class="hint" style="text-align:center;margin:14px 0 0">Staff / team members: enter the Login ID given by your admin.</p>
+      <p class="hint" style="text-align:center;margin:8px 0 0">v${APP_VERSION}</p>
+    </form></div>`;
+    $('#lgId').focus();
+    $('#loginForm').onsubmit = async e => {
+      e.preventDefault();
+      const id = $('#lgId').value.trim(), btn = $('#lgBtn');
+      if (!id) return;
+      busy(btn, 'Checking…');
+      let st = { state: 'login' };
+      if (isEmail(id)) { try { st = await run(sb.rpc('first_login_check', { p_email: id })); } catch (_) { } }
+      if (st && st.state === 'setup') return stepSetup(id, st);
+      if (st && st.state === 'locked') return stepId('Too many wrong attempts on this account. Please contact NexGen Softwares.', id);
+      stepPw(id);
+    };
   };
+
+  // step 2a: first time – licence verified, welcome, set your own password
+  const stepSetup = (id, st, err) => {
+    $('#app').innerHTML = `<div class="login-wrap"><form class="login-card" id="setupForm" autocomplete="on">
+      <div style="text-align:center">
+        ${st.logo ? `<img src="${esc(st.logo)}" alt="" style="width:76px;height:76px;border-radius:18px;object-fit:contain;background:#fff;border:1px solid var(--line)">` : `<img src="../icon-192.png" alt="" style="width:64px;height:64px;border-radius:16px">`}
+        <div style="margin:10px 0 2px;color:var(--ok);font-weight:700;font-size:13px"><i class="fas fa-circle-check"></i> Licence verified</div>
+        <h2 style="margin:4px 0 2px">Welcome, ${esc(st.company_name || st.name || '')}!</h2>
+        <p class="sub" style="margin-bottom:14px">Congratulations 🎉 Your NexGen Softwares account is ready.<br>Set your own password to start – you will use it every time.</p>
+      </div>
+      <input type="hidden" autocomplete="username" value="${esc(id)}">
+      <div class="field"><label>Email ID</label><input class="inp" value="${esc(id)}" disabled></div>
+      <div class="field"><label>Registered mobile number</label>
+        <input class="inp" id="suMob" type="tel" inputmode="numeric" required placeholder="10-digit mobile given at registration"><span class="hint">Only to confirm it is really you.</span></div>
+      <div class="field"><label>New password</label>
+        <div class="inp-group"><input class="inp" id="suPw" type="password" autocomplete="new-password" required minlength="6" placeholder="Minimum 6 characters">
+        <button type="button" class="btn ghost" id="suEye" aria-label="Show password"><i class="fas fa-eye"></i></button></div></div>
+      <div class="field"><label>Confirm password</label><input class="inp" id="suPw2" type="password" autocomplete="new-password" required minlength="6"></div>
+      <div id="lgErr" class="coupon-msg bad" style="margin:-4px 0 12px">${err ? esc(err) : ''}</div>
+      <button class="btn primary block" id="lgBtn" type="submit"><i class="fas fa-lock"></i> Set password & open my software</button>
+      <p class="hint" style="text-align:center;margin:14px 0 0"><a href="#" id="lgBack">Use another Email ID</a></p>
+    </form></div>`;
+    $('#suEye').onclick = () => { ['#suPw', '#suPw2'].forEach(q => { const x = $(q); x.type = x.type === 'password' ? 'text' : 'password'; }); };
+    $('#lgBack').onclick = e => { e.preventDefault(); stepId('', id); };
+    $('#setupForm').onsubmit = async e => {
+      e.preventDefault();
+      const pw = $('#suPw').value, mob = $('#suMob').value, btn = $('#lgBtn'), errEl = $('#lgErr');
+      if (pw.length < 6) return errEl.textContent = 'Password must be at least 6 characters.';
+      if (pw !== $('#suPw2').value) return errEl.textContent = 'Both passwords must be the same.';
+      busy(btn, 'Saving…');
+      try {
+        const r = await run(sb.rpc('first_login_set', { p_email: id, p_mobile: mob, p_password: pw }));
+        if (!r || !r.ok) return stepSetup(id, st, (r && r.error) || 'Could not save the password.');
+        await run(sb.auth.signInWithPassword({ email: r.login_email, password: pw }));
+        const me = await run(sb.rpc('my_portal', { p_login: true }));
+        toast('Password saved. Welcome!');
+        await enter(me);
+      } catch (ex) { stepSetup(id, st, errMsg(ex)); }
+    };
+  };
+
+  // step 2b: password
+  const stepPw = (id, err) => {
+    $('#app').innerHTML = `<div class="login-wrap"><form class="login-card" id="loginForm" autocomplete="on">${head}
+      <h2>Enter password</h2>
+      <div class="field"><label>Email ID</label>
+        <div class="inp-group"><input class="inp" id="lgId" autocomplete="username" value="${esc(id)}" readonly>
+        <button type="button" class="btn ghost" id="lgChange">Change</button></div></div>
+      <div class="field"><label>Password</label>
+        <div class="inp-group"><input class="inp" id="lgPw" type="password" autocomplete="current-password" required>
+        <button type="button" class="btn ghost" id="lgEye" aria-label="Show password"><i class="fas fa-eye"></i></button></div></div>
+      <div id="lgErr" class="coupon-msg bad" style="margin:-4px 0 12px">${err ? esc(err) : ''}</div>
+      <button class="btn primary block" id="lgBtn" type="submit"><i class="fas fa-right-to-bracket"></i> Sign in</button>
+      <p class="hint" style="text-align:center;margin:14px 0 0">Forgot your password? Contact NexGen Softwares – we will let you set a new one.</p>
+    </form></div>`;
+    $('#lgPw').focus();
+    $('#lgEye').onclick = () => { const p = $('#lgPw'); p.type = p.type === 'password' ? 'text' : 'password'; };
+    $('#lgChange').onclick = () => stepId('', id);
+    $('#loginForm').onsubmit = async e => {
+      e.preventDefault();
+      const btn = $('#lgBtn'), err = $('#lgErr');
+      err.textContent = ''; busy(btn, 'Signing in…');
+      try {
+        const email = await run(sb.rpc('login_email_for', { p_identifier: id }));
+        if (!email) throw new Error('No account found with this Email ID');
+        await run(sb.auth.signInWithPassword({ email, password: $('#lgPw').value }));
+        const me = await run(sb.rpc('my_portal', { p_login: true }));
+        await enter(me);
+      } catch (ex) {
+        err.textContent = /invalid login credentials/i.test(errMsg(ex)) ? 'Wrong Email ID or password.' : errMsg(ex);
+        btn.disabled = false; btn.innerHTML = '<i class="fas fa-right-to-bracket"></i> Sign in';
+      }
+    };
+  };
+  stepId(error, keepId);
 }
 
 /* =====================================================================
@@ -593,7 +673,7 @@ function renderCustomerPortal(me) {
     <div class="portal-head"><div class="brand" style="flex:1"><img src="${esc(c.has_logo ? logoUrl(c) : '../icon-192.png')}" alt="" style="background:#fff;object-fit:contain"><div><h1>${esc(c.company_name || 'NexGen Softwares')}</h1><small>Powered by NexGen Softwares</small></div></div>
       <button class="btn ghost" style="color:#fff;border-color:rgba(255,255,255,.25)" id="pLogout"><i class="fas fa-right-from-bracket"></i> Logout</button></div>
     <div class="portal-body">
-      <div class="hello"><h2>Welcome, ${esc(c.name)}</h2><p>${esc(c.company_name || '')} · Login ID <b>${esc(c.code)}</b></p></div>
+      <div class="hello"><h2>Welcome, ${esc(c.name)}</h2><p>${esc(c.company_name || '')} · ID <b>${esc(c.code)}</b></p></div>
       ${apps.length ? `<div class="launch-grid">${apps.map(card).join('')}</div>`
       : `<div class="card empty"><i class="fas fa-box-open"></i>No software is active on your account yet.<br>Please contact NexGen Softwares.</div>`}
       <p class="muted small" style="text-align:center;margin-top:22px" data-verline="light">${versionHtml(false)}</p>
@@ -750,7 +830,7 @@ function viewCustomers(page) {
    ===================================================================== */
 let W = null;
 function newWizard() {
-  return { step: 1, cust: { name: '', mobile: '', email: '', company_name: '', city: '', address: '', gstin: '', notes: '', customer_code: '', logo: null }, password: genPassword(), items: {}, created: null, createdSubs: [] };
+  return { step: 1, cust: { name: '', mobile: '', email: '', company_name: '', city: '', address: '', gstin: '', notes: '', customer_code: '', logo: null }, password: genPassword(), ownPw: true, items: {}, created: null, createdSubs: [] };
 }
 function stepsBar(step) {
   const st = (n, l) => `<div class="step ${step === n ? 'on' : step > n ? 'done' : ''}"><span class="n">${step > n ? '<i class="fas fa-check"></i>' : n}</span>${l}</div>`;
@@ -774,7 +854,7 @@ function wizStep1(page) {
     <div class="grid2">
       ${f('name', 'Full name', { req: true, ph: 'e.g. Vinayak Gaikwad' })}
       ${f('mobile', 'Mobile', { req: true, type: 'tel', im: 'tel', ph: '10-digit mobile' })}
-      ${f('email', 'Email ID', { type: 'email', ph: 'name@example.com' })}
+      ${f('email', 'Email ID (customer logs in with this)', { req: true, type: 'email', ph: 'name@example.com' })}
       ${f('company_name', 'Company name', { ph: 'e.g. Charvi Computers' })}
       ${f('city', 'City')}
       ${f('gstin', 'GSTIN (optional)')}
@@ -782,14 +862,15 @@ function wizStep1(page) {
     ${f('address', 'Address', { area: true })}
     <h3 style="margin-top:8px"><i class="fas fa-key" style="color:var(--brand)"></i> Login for the portal</h3>
     <div class="grid2">
-      <div class="field"><label>Login ID</label>
+      <div class="field"><label>Customer ID</label>
         <div class="inp-group"><input class="inp mono" data-k="customer_code" id="codeInp" value="${esc(c.customer_code)}" placeholder="Leave blank = auto (${esc(S.settings.customer_code_prefix || 'NGS')}1001…)" style="text-transform:uppercase">
         <button type="button" class="btn ghost" id="autoId"><i class="fas fa-wand-magic-sparkles"></i> Auto</button></div>
-        <span class="hint">Customer can also log in with their mobile number.</span></div>
-      <div class="field"><label>Password <span class="req">*</span></label>
-        <div class="inp-group"><input class="inp mono" id="pwInp" value="${esc(W.password)}">
+        <span class="hint">Your reference number for this customer. Login is with the Email ID.</span></div>
+      <div class="field"><label>Password</label>
+        <label class="row" style="gap:8px;font-weight:600;margin:6px 0"><input type="checkbox" id="pwOwn" ${W.ownPw ? 'checked' : ''}> Customer sets their own password on first login</label>
+        <div class="inp-group" id="pwBox" style="${W.ownPw ? 'display:none' : ''}"><input class="inp mono" id="pwInp" value="${esc(W.password)}">
         <button type="button" class="btn ghost" id="autoPw"><i class="fas fa-wand-magic-sparkles"></i> Auto</button></div>
-        <span class="hint">Minimum 6 characters. You can share it on WhatsApp at the end.</span></div>
+        <span class="hint" id="pwHint">${W.ownPw ? 'They enter their Email ID on the login page, confirm the registered mobile number and choose a password.' : 'Minimum 6 characters. You can share it on WhatsApp at the end.'}</span></div>
     </div>
     ${f('notes', 'Internal notes (only you can see)', { area: true })}
     <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:6px">
@@ -800,6 +881,7 @@ function wizStep1(page) {
   $$('#s1 [data-k]').forEach(el => el.oninput = () => { c[el.dataset.k] = el.value; });
   bindLogoPicker(page, 'wl', d => { c.logo = d; });
   $('#pwInp').oninput = e => W.password = e.target.value;
+  $('#pwOwn').onchange = e => { W.ownPw = e.target.checked; $('#pwBox').style.display = W.ownPw ? 'none' : ''; $('#pwHint').textContent = W.ownPw ? 'They enter their Email ID on the login page, confirm the registered mobile number and choose a password.' : 'Minimum 6 characters. You can share it on WhatsApp at the end.'; };
   $('#autoId').onclick = () => { c.customer_code = suggestLoginId(c.company_name || c.name); $('#codeInp').value = c.customer_code; };
   $('#autoPw').onclick = () => { W.password = genPassword(); $('#pwInp').value = W.password; };
   $('#s1reset').onclick = () => { W = newWizard(); wizStep1(page); };
@@ -807,10 +889,11 @@ function wizStep1(page) {
     e.preventDefault();
     if (!c.name.trim()) return toast('Enter customer name', 'err');
     if (digits(c.mobile).length < 10) return toast('Enter a valid 10-digit mobile number', 'err');
-    if (c.email && !/^\S+@\S+\.\S+$/.test(c.email)) return toast('Email looks wrong', 'err');
+    if (!/^\S+@\S+\.\S+$/.test((c.email || '').trim())) return toast('Enter the customer\'s Email ID – they log in with it', 'err');
+    if (S.customers.some(x => (x.email || '').toLowerCase() === c.email.trim().toLowerCase())) return toast('This Email ID is already registered', 'err');
     if (c.customer_code && !/^[A-Za-z0-9_-]{3,30}$/.test(c.customer_code.trim())) return toast('Login ID: only letters, numbers, - and _ (3-30)', 'err');
     if (c.customer_code && S.customers.some(x => x.customer_code === c.customer_code.trim().toUpperCase())) return toast('This Login ID is already taken', 'err');
-    if ((W.password || '').length < 6) return toast('Password must be at least 6 characters', 'err');
+    if (!W.ownPw && (W.password || '').length < 6) return toast('Password must be at least 6 characters', 'err');
     const dup = S.customers.find(x => digits(x.mobile).slice(-10) === digits(c.mobile).slice(-10));
     const go = () => { W.step = 2; wizStep2(page); };
     if (dup) confirmBox(`A customer with this mobile already exists: <b>${esc(dup.company_name || dup.name)}</b> (${esc(dup.customer_code)}). Register a new customer anyway?`, { okText: 'Yes, continue' }).then(ok => ok && go());
@@ -960,7 +1043,7 @@ async function finishWizard(page, list) {
   try {
     if (!W.created) {
       const p = { ...W.cust, customer_code: W.cust.customer_code.trim().toUpperCase() };
-      W.created = await run(sb.rpc('admin_create_customer', { p, p_password: W.password }));
+      W.created = await run(sb.rpc('admin_create_customer', { p, p_password: W.ownPw ? null : W.password }));
     }
     if (list.length) W.createdSubs = await run(sb.rpc('admin_add_subscriptions', { p_customer_id: W.created.id, p_items: list }));
   } catch (e) {
@@ -975,15 +1058,16 @@ async function finishWizard(page, list) {
   await loadAll();
   W.step = 3;
   const createdCust = custById(W.created.id) || W.created;
-  showCredentials(page, createdCust, W.password, W.createdSubs, true);
+  showCredentials(page, createdCust, W.ownPw ? '' : W.password, W.createdSubs, true);
   if (W.createdSubs && W.createdSubs.length) activatedPopup(createdCust, W.createdSubs);
 }
 
 function credentialsText(c, password, subs) {
   const lines = [`Welcome to ${S.settings.company_name || 'NexGen Softwares'}!`, '', `Name: ${c.name}`];
   if (c.company_name) lines.push(`Company: ${c.company_name}`);
-  lines.push('', `Login link: ${portalUrl()}`, `Login ID: ${c.customer_code}`);
+  lines.push('', `Login link: ${portalUrl()}`, `Email ID: ${c.email || c.customer_code}`);
   if (password) lines.push(`Password: ${password}`);
+  else if (!c.password_set_at) lines.push('First time: enter your Email ID, confirm your mobile number and set your own password.');
   if (subs && subs.length) {
     lines.push('', 'Your softwares:');
     subs.forEach(s => { const sw = swById(s.software_id); lines.push(`• ${sw ? sw.name : ''} – ${planLabel(s.plan)}, valid till ${fmtD(s.end_date)}`); });
@@ -1000,8 +1084,8 @@ function showCredentials(page, c, password, subs, wizard) {
     <div class="row" style="margin-bottom:16px">${avatarHtml(c, 'background:rgba(255,255,255,.15)')}<div><div style="font-size:18px;font-weight:800">${esc(c.company_name || c.name)}</div><div style="color:#c7d2fe">${esc(c.name)} · ${esc(c.mobile)}</div></div></div>
     <div class="grid2">
       <div><div class="k">Login link</div><div class="v" style="font-size:14px">${esc(portalUrl())}</div></div>
-      <div><div class="k">Login ID</div><div class="v">${esc(c.customer_code)}</div></div>
-      ${password ? `<div><div class="k">Password</div><div class="v">${esc(password)}</div></div>` : ''}
+      <div><div class="k">Email ID (login)</div><div class="v" style="font-size:15px">${esc(c.email || c.customer_code)}</div></div>
+      ${password ? `<div><div class="k">Password</div><div class="v">${esc(password)}</div></div>` : (!c.password_set_at ? `<div><div class="k">Password</div><div style="font-weight:600">Customer sets it on first login</div></div>` : '')}
       <div><div class="k">Softwares</div><div style="font-weight:600">${(subs || []).map(s => esc(swById(s.software_id)?.name) + ' <span style="color:#c7d2fe">(' + planLabel(s.plan) + ' till ' + fmtD(s.end_date) + ')</span>').join('<br>') || '—'}</div></div>
     </div>
   </div>
@@ -1072,7 +1156,9 @@ function viewCustomer(id) {
     <div>
       <div class="card card-pad" style="margin-bottom:16px"><h3>Details</h3>
         <dl class="kv">
-          <dt>Login ID</dt><dd class="mono"><b>${esc(c.customer_code)}</b> <button class="btn sm ghost" onclick="copy('${esc(c.customer_code)}')" aria-label="Copy"><i class="fas fa-copy"></i></button></dd>
+          <dt>Customer ID</dt><dd class="mono"><b>${esc(c.customer_code)}</b> <button class="btn sm ghost" onclick="copy('${esc(c.customer_code)}')" aria-label="Copy"><i class="fas fa-copy"></i></button></dd>
+          <dt>Login (Email ID)</dt><dd><b>${esc(c.email || '— add an Email ID —')}</b></dd>
+          <dt>Password</dt><dd>${pwStatus(c)}</dd>
           <dt>Name</dt><dd>${esc(c.name)}</dd><dt>Mobile</dt><dd>${esc(c.mobile)}</dd><dt>Email</dt><dd>${esc(c.email || '—')}</dd>
           <dt>Company</dt><dd>${esc(c.company_name || '—')}</dd><dt>City</dt><dd>${esc(c.city || '—')}</dd><dt>Address</dt><dd>${esc(c.address || '—')}</dd>
           <dt>GSTIN</dt><dd>${esc(c.gstin || '—')}</dd><dt>Registered</dt><dd>${fmtDT(c.created_at)}</dd><dt>Last login</dt><dd>${fmtDT(c.last_login_at)}</dd>
@@ -1083,6 +1169,7 @@ function viewCustomer(id) {
           <button class="btn ghost" id="cEdit"><i class="fas fa-pen"></i> Edit details</button>
           <button class="btn ghost" id="cShare"><i class="fab fa-whatsapp"></i> Share login link & ID</button>
           <button class="btn ghost" id="cPw"><i class="fas fa-key"></i> Reset password</button>
+          <button class="btn ghost" id="cPwOwn" title="Customer forgot the password: they set a new one themselves on the login page"><i class="fas fa-user-lock"></i> Let customer set new password</button>
           <button class="btn ghost" id="cBlock"><i class="fas ${c.status === 'blocked' ? 'fa-unlock' : 'fa-ban'}"></i> ${c.status === 'blocked' ? 'Unblock customer' : 'Block customer'}</button>
           <button class="btn danger" id="cDel"><i class="fas fa-trash"></i> Delete customer</button>
         </div></div>
@@ -1095,6 +1182,19 @@ function viewCustomer(id) {
   $('#cEdit').onclick = () => editCustomer(c);
   $('#cShare').onclick = () => showCredentials(page, c, null, liveSubs(c.id), false);
   $('#cPw').onclick = () => resetPassword(c);
+  $('#cPwOwn').onclick = async () => {
+    if (!c.email) return toast('Add the customer\'s Email ID first (Edit)', 'err');
+    if (!await confirmBox(`<b>${esc(c.company_name || c.name)}</b> will set a new password on the login page (Email ID + registered mobile number). The old password stops working now.`, { okText: 'Yes, allow' })) return;
+    try {
+      await run(sb.rpc('admin_allow_password_setup', { p_customer_id: c.id }));
+      Object.assign(c, { password_set_at: null, password_set_by: null, setup_fails: 0 });
+      toast('Done. Ask the customer to open the login link and enter their Email ID.');
+      const msg = [`Hello ${c.name},`, '', 'You can now set a new password:', `1. Open ${portalUrl()}`, `2. Enter your Email ID: ${c.email}`, '3. Confirm your registered mobile number and choose a new password.', '', `– ${S.settings.company_name || 'NexGen Softwares'}`].join('\n');
+      openModal({ title: 'Customer can set a new password', body: `<p style="margin-top:0">Send these steps to the customer:</p><pre class="small" style="white-space:pre-wrap;background:var(--bg);padding:12px;border-radius:10px">${esc(msg)}</pre>`,
+        foot: `<a class="btn wa" target="_blank" href="${esc(waLink(c.mobile, msg))}"><i class="fab fa-whatsapp"></i> Send on WhatsApp</a><button class="btn primary" data-close>OK</button>` });
+      route();
+    } catch (e) { toast(errMsg(e), 'err'); }
+  };
   $('#cBlock').onclick = async () => {
     const to = c.status === 'blocked' ? 'active' : 'blocked';
     if (!await confirmBox(to === 'blocked' ? `Block <b>${esc(c.company_name || c.name)}</b>? They will not be able to log in.` : `Unblock <b>${esc(c.company_name || c.name)}</b>?`, { danger: to === 'blocked', okText: to === 'blocked' ? 'Block' : 'Unblock' })) return;
@@ -1131,6 +1231,11 @@ async function editCustomer(c) {
     } catch (e) { toast(errMsg(e), 'err'); }
   };
 }
+function pwStatus(c) {
+  if (c.setup_fails >= 5 && !c.password_set_at) return '<span class="badge b-blocked">Locked – 5 wrong tries</span> <span class="small muted">press “Let customer set new password”</span>';
+  if (!c.password_set_at) return '<span class="badge b-pending">Not set yet</span> <span class="small muted">waiting for the customer\'s first login</span>';
+  return `<span class="badge b-active">Set by ${c.password_set_by === 'customer' ? 'customer' : 'you'}</span> <span class="small muted">${fmtDT(c.password_set_at)}</span>`;
+}
 function resetPassword(c) {
   let pw = genPassword();
   const m = openModal({
@@ -1145,7 +1250,7 @@ function resetPassword(c) {
     if (pw.length < 6) return toast('Minimum 6 characters', 'err');
     try {
       await run(sb.rpc('admin_reset_customer_password', { p_customer_id: c.id, p_password: pw }));
-      m.close(); toast('Password changed');
+      m.close(); toast('Password changed'); Object.assign(c, { password_set_at: new Date().toISOString(), password_set_by: 'admin' });
       showCredentials($('#page'), c, pw, liveSubs(c.id), false);
     } catch (e) { toast(errMsg(e), 'err'); }
   };

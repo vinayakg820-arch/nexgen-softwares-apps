@@ -1,5 +1,5 @@
 /* NexGen portal service worker – only this folder (other softwares have their own) */
-const CACHE = 'nexgen-portal-v2.0.0';
+const CACHE = 'nexgen-portal-v2.1.0';
 self.addEventListener('install', e => { self.skipWaiting(); e.waitUntil(caches.open(CACHE).then(c => c.addAll(['./', 'index.html', 'manifest.json'])).catch(() => {})); });
 self.addEventListener('activate', e => e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k.startsWith('nexgen-portal-') && k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())));
 self.addEventListener('fetch', e => {

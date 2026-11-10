@@ -79,6 +79,8 @@
     '.ver{position:fixed;right:6px;bottom:calc(env(safe-area-inset-bottom,0px) + 6px);pointer-events:auto;display:flex;align-items:center;gap:5px;' +
     'background:rgba(255,255,255,.92);color:#334155;border:1px solid #e2e8f0;border-radius:999px;padding:3px 9px 3px 7px;font-size:11px;font-weight:700;' +
     'box-shadow:0 2px 8px rgba(15,23,42,.12);cursor:pointer;opacity:.85}' +
+    '.sw{position:fixed;right:6px;bottom:calc(env(safe-area-inset-bottom,0px) + 32px);pointer-events:auto;display:flex;align-items:center;gap:6px;background:#1e1b4b;color:#fff;border:0;border-radius:999px;' +
+    'padding:6px 12px 6px 9px;font:700 12px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;box-shadow:0 4px 14px rgba(15,23,42,.3);cursor:pointer;opacity:.92}.sw:hover{opacity:1}.sw b{font-size:14px;line-height:1}' +
     '.ver:hover{opacity:1}.ver i{width:8px;height:8px;border-radius:50%;background:#94a3b8;display:inline-block}' +
     '.ver.ok i{background:#16a34a}.ver.old{background:#fff7ed;border-color:#fdba74;color:#9a3412;opacity:1}.ver.old i{background:#ea580c}' +
     '</style>';
@@ -180,6 +182,25 @@
   /* called once the login is confirmed: show the install button and suggest installing (once per device).
      The app / APK keeps the SOFTWARE's own name + icon, so two softwares stay easy to tell apart;
      the customer's name + logo are shown inside the software itself. */
+  /* SWITCH button (every software): the super admin goes straight back to the Super Admin panel,
+     a customer with more than one software goes back to "My softwares" – no logout / login needed. */
+  var swEl = null;
+  if (!GATE) { try { sessionStorage.removeItem('ngs-switch'); } catch (e) { } }
+  function showSwitch(kind) {
+    try { if (kind) sessionStorage.setItem('ngs-switch', kind); else kind = sessionStorage.getItem('ngs-switch'); } catch (e) { }
+    if (!GATE || !kind) return;
+    if (swEl) { if (swEl.getAttribute('data-k') === kind) return; swEl.remove(); swEl = null; }
+    mount();
+    var admin = kind === 'admin';
+    swEl = el('<button class="sw" title="' + (admin ? 'Back to the Super Admin panel' : 'Open your other softwares') + '"><b>&#8644;</b>' + (admin ? 'Super Admin' : 'My softwares') + '</button>');
+    swEl.setAttribute('data-k', kind);
+    swEl.onclick = function () {
+      var url = ROOT + (admin ? 'admin/' : 'portal/');
+      // installed on a computer as its own app: keep this app open and show the panel in the browser
+      if (standalone && !inApk && !isAndroid && !isIOS) { var w = window.open(url, '_blank'); if (w) return; }
+      location.href = url;
+    };
+  }
   function afterLogin(info) {
     info = info || {};
     if (info.company) window.NexGenBrand = { company: info.company, code: info.tenant_code };
@@ -336,7 +357,7 @@
     return gateEl;
   }
   function toLogin() { location.replace(ROOT + 'portal/?app=' + encodeURIComponent(APP)); }
-  function logoutAll() { ls(STORE, null); ls(LIC, null); toLogin(); }
+  function logoutAll() { ls(STORE, null); ls(LIC, null); try { sessionStorage.removeItem('ngs-switch'); } catch (e) { } toLogin(); }
 
   function readSession() { try { var s = JSON.parse(ls(STORE) || 'null'); return s && s.access_token ? s : null; } catch (e) { return null; } }
   function freshSession() {
@@ -399,7 +420,7 @@
     try { cached = JSON.parse(ls(LIC) || 'null'); } catch (e) { }
     var okCached = cached && cached.ok && cached.until >= todayIST() && readSession();
     var loadingHtml = '<div><img class="logo" alt="" src="' + esc(ICON) + '" style="width:76px;height:76px;border-radius:20px"><div class="spin"></div></div>';
-    if (okCached) unlock();                       // open instantly, confirm in background
+    if (okCached) { unlock(); if (cached.who === 'admin') showSwitch('admin'); else showSwitch(); }   // open instantly, confirm in background
     else if (SPLASH) setTimeout(function () { if (!unlocked && !gateEl) showGate(loadingHtml, true); }, 4500);
     else showGate(loadingHtml, true);
 
@@ -411,12 +432,14 @@
         if (r.status === 401) { ls(STORE, null); return toLogin(); }
         if (!r.ok) throw new Error('offline');
         return r.json().then(function (me) {
-          if (me.role === 'super_admin') { ls(LIC, JSON.stringify({ ok: true, until: '9999-12-31', who: 'admin' })); unlock(); afterLogin({ suggest: false }); return; }
+          if (me.role === 'super_admin') { ls(LIC, JSON.stringify({ ok: true, until: '9999-12-31', who: 'admin' })); unlock(); showSwitch('admin'); afterLogin({ suggest: false }); return; }
           if (me.role !== 'customer' && me.role !== 'member') return logoutAll();
           var app = (me.apps || []).filter(function (a) { return a.code === APP; })[0];
           if (app && (app.state === 'active' || app.state === 'trial')) {
             ls(LIC, JSON.stringify({ ok: true, until: app.end_date, who: me.customer.code }));
             unlock();
+            if (me.role === 'customer' && (me.apps || []).length > 1) showSwitch('apps');
+            else { try { sessionStorage.removeItem('ngs-switch'); } catch (e) { } if (swEl) { swEl.remove(); swEl = null; } }
             var c = me.customer || {};
             afterLogin({ tenant_code: c.tenant_code || c.code, company: c.company_name || c.name });
             if (app.days_left <= 5) soonBar(app);
@@ -436,5 +459,5 @@
   document.addEventListener('visibilitychange', function () {
     if (!document.hidden && Date.now() - lastCheck > 30 * 60 * 1000) { lastCheck = Date.now(); check(); }
   });
-  window.NexGenShell = { app: APP, logout: logoutAll, install: install, afterLogin: afterLogin, checkLatest: checkLatest, update: hardUpdate };
+  window.NexGenShell = { app: APP, toPanel: function () { location.href = ROOT + 'portal/'; }, logout: logoutAll, install: install, afterLogin: afterLogin, checkLatest: checkLatest, update: hardUpdate };
 })();
