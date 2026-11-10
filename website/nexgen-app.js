@@ -17,6 +17,7 @@
   var ds = me.dataset || {};
   var APP = ds.app || 'portal';
   var NAME = ds.name || document.title || 'NexGen';
+  var PRODUCT = NAME;
   var ICON = new URL(ds.icon || 'icon-192.png', location.href).href;
   var COLOR = ds.color || '#4f46e5';
   var ROOT = new URL('./', me.src || location.href).href;          // site root (this file lives there)
@@ -37,6 +38,8 @@
   } catch (e) { }
   var standalone = inApk || (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
   var APK_URL = ROOT + 'apk/NexGen-' + APP + '.apk';
+  var BRAND_API = SB + '/functions/v1/app-brand';
+  var loggedIn = false;
 
   function ls(k, v) { try { if (v === undefined) return localStorage.getItem(k); if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) { return null; } }
   function todayIST() { try { return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date()); } catch (e) { return new Date().toISOString().slice(0, 10); } }
@@ -86,66 +89,87 @@
      =================================================================== */
   var deferred = null, btn = null, HIDE = 'ngs-inst-hide-' + APP;
   function canShow() {
-    if (standalone) return false;
-    var h = +ls(HIDE) || 0;
-    return Date.now() > h;
+    if (standalone || !loggedIn) return false;             // only after a successful login
+    return Date.now() > (+ls(HIDE) || 0);
   }
   function showInstall() {
-    if (!canShow() || btn) return;
+    if (!canShow()) return;
+    if (btn) { var im = btn.querySelector('img'); if (im) im.src = ICON; return; }
     mount();
     btn = el('<div class="inst" role="button" aria-label="Install ' + esc(NAME) + '" title="Install ' + esc(NAME) + '">' +
       '<img alt="" src="' + esc(ICON) + '"><div class="t"><span>' + (isAndroid ? 'Install APK' : 'Install app') + '</span><b class="dl">&#8595;</b></div>' +
       '<button class="x" aria-label="Hide">&times;</button></div>');
     btn.style.display = 'flex';
     btn.querySelector('.x').onclick = function (e) { e.stopPropagation(); ls(HIDE, String(Date.now() + 3 * 864e5)); btn.remove(); btn = null; };
-    btn.onclick = install;
+    btn.onclick = function () { installSheet(); };
     setTimeout(function () { btn && btn.classList.add('mini'); }, 7000);
   }
-  function apkSheet() {
-    mount();
+  var sheetOpen = false;
+  function installSheet() {
+    if (sheetOpen) return;
+    sheetOpen = true; mount();
     var m = el('<div class="mask"><div class="sheet"><div class="row"><img alt="" src="' + esc(ICON) + '"><div><h3>' + esc(NAME) + '</h3>' +
-      '<p style="margin:0">Android app (APK)</p></div></div>' +
-      '<p><b>1.</b> The APK download has started. If not, tap <b>Download APK</b>.</p>' +
-      '<p><b>2.</b> Open the downloaded file (from the notification or <b>Downloads</b>).</p>' +
-      '<p><b>3.</b> If the phone asks, tap <b>Settings → Allow from this source</b>, then go back.</p>' +
-      '<p><b>4.</b> Tap <b>Install</b>, then <b>Open</b>. Updates come automatically — no need to reinstall.</p>' +
-      '<a class="btn pri" href="' + esc(APK_URL) + '" download>Download APK</a>' +
-      (deferred ? '<button class="btn gh" data-web>Install as web app instead</button>' : '') +
-      '<button class="btn gh" data-close>Close</button></div></div>');
+      '<p style="margin:0">' + (isAndroid ? 'Install the app on this phone' : 'Install it like an app on this device') + '</p></div></div>' +
+      (isAndroid
+        ? '<p>Tap <b>Download APK</b>, open the downloaded file, allow <b>Install from this source</b> if the phone asks, then tap <b>Install</b>. Updates come automatically — no reinstall needed.</p>' +
+          '<a class="btn pri" data-dl href="' + esc(APK_URL) + '" download>Download APK</a>' +
+          (deferred ? '<button class="btn gh" data-web>Install as web app instead</button>' : '')
+        : (isIOS ? '<p>1. Tap the <b>Share</b> button in Safari.</p><p>2. Choose <b>Add to Home Screen</b>, then <b>Add</b>.</p>'
+                 : (deferred ? '' : '<p>Open the browser menu <b>&#8942;</b> and choose <b>Install app</b> / <b>Add to Home screen</b>.</p>')) +
+          (deferred ? '<button class="btn pri" data-web>Install app</button>' : '')) +
+      '<button class="btn gh" data-close>Not now</button></div></div>');
     m.onclick = function (e) {
-      if (e.target === m || e.target.hasAttribute('data-close')) m.remove();
-      if (e.target.hasAttribute('data-web')) { m.remove(); webInstall(); }
+      var tg = e.target;
+      if (tg === m || tg.hasAttribute('data-close')) { m.remove(); sheetOpen = false; }
+      else if (tg.hasAttribute('data-web')) { m.remove(); sheetOpen = false; webInstall(); }
+      else if (tg.hasAttribute('data-dl')) { setTimeout(function () { m.remove(); sheetOpen = false; }, 400); }
     };
   }
-  function install() {
-    if (isAndroid) {                       // start the APK download straight away, then show the steps
-      var a = document.createElement('a'); a.href = APK_URL; a.download = 'NexGen-' + APP + '.apk';
-      document.body.appendChild(a); a.click(); a.remove();
-      return apkSheet();
-    }
-    webInstall();
-  }
+  function install() { installSheet(); }
   function webInstall() {
-    if (deferred) {
-      deferred.prompt();
-      (deferred.userChoice || Promise.resolve()).then(function (c) { if (c && c.outcome === 'accepted' && btn) { btn.remove(); btn = null; } });
-      deferred = null;
-      return;
-    }
-    // iPhone / browsers without an install prompt: show the steps
-    mount();
-    var m = el('<div class="mask"><div class="sheet"><div class="row"><img alt="" src="' + esc(ICON) + '"><div><h3>Install ' + esc(NAME) + '</h3>' +
-      '<p style="margin:0">Add it to your home screen like an app</p></div></div>' +
-      (isIOS ? '<p>1. Tap the <b>Share</b> button (square with arrow) in Safari.</p><p>2. Choose <b>Add to Home Screen</b>, then <b>Add</b>.</p>'
-             : '<p>1. Open the browser menu <b>&#8942;</b> (top-right).</p><p>2. Tap <b>Install app</b> or <b>Add to Home screen</b>.</p>') +
-      '<p style="font-size:12.5px">Each NexGen software installs as its own app with its own icon.</p>' +
-      '<button class="btn gh">OK</button></div></div>');
-    m.onclick = function (e) { if (e.target === m || e.target.tagName === 'BUTTON') m.remove(); };
+    if (!deferred) return installSheet();
+    deferred.prompt();
+    (deferred.userChoice || Promise.resolve()).then(function (c) { if (c && c.outcome === 'accepted' && btn) { btn.remove(); btn = null; } });
+    deferred = null;
   }
-  window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); deferred = e; showInstall(); });
+  window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); deferred = e; if (loggedIn) showInstall(); });
   window.addEventListener('appinstalled', function () { if (btn) { btn.remove(); btn = null; } });
-  if ((isIOS || isAndroid) && !standalone) {
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', showInstall); else showInstall();
+
+  /* called once the login is confirmed: switch to the customer's own name + logo, then suggest installing */
+  function setLink(rel, href) {
+    var l = document.querySelectorAll('link[rel="' + rel + '"]');
+    for (var i = 1; i < l.length; i++) l[i].parentNode.removeChild(l[i]);
+    var link = l[0] || document.head.appendChild(document.createElement('link'));
+    link.rel = rel; link.href = href;
+    return link;
+  }
+  function afterLogin(info) {
+    info = info || {};
+    if (info.tenant_code && APP !== 'portal') {
+      var company = String(info.company || '').trim();
+      var q = '?c=' + encodeURIComponent(info.tenant_code) + '&v=' + (info.brand_v || 0);
+      setLink('manifest', BRAND_API + q + '&app=' + encodeURIComponent(APP));
+      if (info.has_logo) { ICON = BRAND_API + q + '&logo=1'; setLink('apple-touch-icon', ICON); }
+      if (company) {
+        NAME = company;
+        var meta = document.querySelector('meta[name="apple-mobile-web-app-title"]') || document.head.appendChild(document.createElement('meta'));
+        meta.name = 'apple-mobile-web-app-title'; meta.content = company;
+      }
+    }
+    if (info.apk_url) {
+      // Supabase storage: ask for a real download (otherwise the phone may just open the file URL)
+      var fname = (String(NAME || APP).replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '') || APP) + '.apk';
+      APK_URL = info.apk_url + (info.apk_url.indexOf('?') < 0 ? '?' : '&') + 'download=' + encodeURIComponent(fname);
+    }
+    loggedIn = true;
+    if (standalone) return;
+    showInstall();
+    // suggest once per device (per software) right after the first successful login
+    var key = 'ngs-suggested-' + APP;
+    if (info.suggest !== false && !ls(key) && Date.now() > (+ls(HIDE) || 0)) {
+      ls(key, String(Date.now()));
+      setTimeout(installSheet, 900);
+    }
   }
 
   /* ===================================================================
@@ -177,7 +201,7 @@
     document.addEventListener('visibilitychange', function () { if (!document.hidden) checkVersion(); });
   }
 
-  if (!GATE) return;
+  if (!GATE) { window.NexGenShell = { app: APP, install: install, afterLogin: afterLogin }; return; }
 
   /* ===================================================================
      LICENCE GATE
@@ -273,12 +297,15 @@
         if (r.status === 401) { ls(STORE, null); return toLogin(); }
         if (!r.ok) throw new Error('offline');
         return r.json().then(function (me) {
-          if (me.role === 'super_admin') { ls(LIC, JSON.stringify({ ok: true, until: '9999-12-31', who: 'admin' })); return unlock(); }
-          if (me.role !== 'customer') return logoutAll();
+          if (me.role === 'super_admin') { ls(LIC, JSON.stringify({ ok: true, until: '9999-12-31', who: 'admin' })); unlock(); afterLogin({ suggest: false }); return; }
+          if (me.role !== 'customer' && me.role !== 'member') return logoutAll();
           var app = (me.apps || []).filter(function (a) { return a.code === APP; })[0];
           if (app && (app.state === 'active' || app.state === 'trial')) {
             ls(LIC, JSON.stringify({ ok: true, until: app.end_date, who: me.customer.code }));
             unlock();
+            var c = me.customer || {};
+            afterLogin({ tenant_code: c.tenant_code || c.code, company: c.company_name || c.name, has_logo: c.has_logo, brand_v: c.brand_v,
+                         apk_url: me.apks && me.apks[APP] });
             if (app.days_left <= 5) soonBar(app);
             return;
           }
@@ -296,5 +323,5 @@
   document.addEventListener('visibilitychange', function () {
     if (!document.hidden && Date.now() - lastCheck > 30 * 60 * 1000) { lastCheck = Date.now(); check(); }
   });
-  window.NexGenShell = { app: APP, logout: logoutAll, install: install };
+  window.NexGenShell = { app: APP, logout: logoutAll, install: install, afterLogin: afterLogin };
 })();
