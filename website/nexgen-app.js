@@ -24,6 +24,7 @@
   var KEY = 'sb_publishable_eKTOE3ywBI9ye02QFVDmvg_231pdTTJ';
   var STORE = 'nexgen-portal-auth', LIC = 'ngs-lic-' + APP;
   var GATE = APP !== 'portal';
+  var SPLASH = ds.splash || '';        // the app's own opening screen stays visible while the licence is checked
   var VERSION = ds.version || '';
   var SHELL_UPDATER = ds.updater === 'shell';
 
@@ -91,12 +92,20 @@
      INSTALL BUTTON (top-right, with the logo)
      =================================================================== */
   var deferred = null, btn = null, HIDE = 'ngs-inst-hide-' + APP;
+  // wait until the app's own opening screen has finished, so nothing is drawn over it
+  function afterSplash(cb) {
+    var sp = SPLASH && document.querySelector(SPLASH);
+    if (!sp || sp.classList.contains('gone') || sp.style.display === 'none' || getComputedStyle(sp).display === 'none') return cb();
+    setTimeout(function () { afterSplash(cb); }, 300);
+  }
   function canShow() {
     if (standalone || !loggedIn) return false;             // only after a successful login
     return Date.now() > (+ls(HIDE) || 0);
   }
   function showInstall() {
     if (!canShow()) return;
+    var sp = SPLASH && document.querySelector(SPLASH);
+    if (sp && !sp.classList.contains('gone') && sp.style.display !== 'none') return afterSplash(showInstall);
     if (btn) { var im = btn.querySelector('img'); if (im) im.src = ICON; return; }
     mount();
     btn = el('<div class="inst" role="button" aria-label="Install ' + esc(NAME) + '" title="Install ' + esc(NAME) + '">' +
@@ -151,7 +160,7 @@
     var key = 'ngs-suggested-' + APP;
     if (info.suggest !== false && !ls(key) && Date.now() > (+ls(HIDE) || 0)) {
       ls(key, String(Date.now()));
-      setTimeout(installSheet, 900);
+      afterSplash(function () { setTimeout(installSheet, 900); });
     }
   }
 
@@ -240,7 +249,7 @@
   function startVersion() {
     if (verStarted || !VERSION || ds.badge === 'off') return;
     verStarted = true;
-    drawVersion(); checkLatest(false); afterUpdateNotice();
+    afterSplash(function () { drawVersion(); checkLatest(false); afterUpdateNotice(); });
     document.addEventListener('visibilitychange', function () { if (!document.hidden) checkLatest(false); });
   }
 
@@ -279,7 +288,7 @@
      LICENCE GATE
      =================================================================== */
   var lockCss = document.createElement('style');
-  lockCss.textContent = 'html.ngs-lock body{visibility:hidden!important}';
+  lockCss.textContent = SPLASH ? 'html.ngs-lock body>*:not(' + SPLASH + '){visibility:hidden!important}' : 'html.ngs-lock body{visibility:hidden!important}';
   document.head ? document.head.appendChild(lockCss) : document.documentElement.appendChild(lockCss);
   var gateEl = null, unlocked = false;
 
@@ -359,8 +368,10 @@
     var cached = null;
     try { cached = JSON.parse(ls(LIC) || 'null'); } catch (e) { }
     var okCached = cached && cached.ok && cached.until >= todayIST() && readSession();
+    var loadingHtml = '<div><img class="logo" alt="" src="' + esc(ICON) + '" style="width:76px;height:76px;border-radius:20px"><div class="spin"></div></div>';
     if (okCached) unlock();                       // open instantly, confirm in background
-    else showGate('<div><img class="logo" alt="" src="' + esc(ICON) + '" style="width:76px;height:76px;border-radius:20px"><div class="spin"></div></div>', true);
+    else if (SPLASH) setTimeout(function () { if (!unlocked && !gateEl) showGate(loadingHtml, true); }, 4500);
+    else showGate(loadingHtml, true);
 
     freshSession().then(function (s) {
       if (!s) return toLogin();
