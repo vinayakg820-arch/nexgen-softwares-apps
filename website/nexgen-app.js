@@ -116,35 +116,61 @@
     btn.onclick = function () { installSheet(); };
     setTimeout(function () { btn && btn.classList.add('mini'); }, 7000);
   }
-  var sheetOpen = false;
+  var sheetOpen = false, onPrompt = [];
   function installSheet() {
     if (sheetOpen) return;
+    if (!isAndroid && deferred) return webInstall();          // Chrome / Edge: straight to the browser's own "Install app?" window
     sheetOpen = true; mount();
     var m = el('<div class="mask"><div class="sheet"><div class="row"><img alt="" src="' + esc(ICON) + '"><div><h3>' + esc(NAME) + '</h3>' +
-      '<p style="margin:0">' + (isAndroid ? 'Install the app on this phone' : 'Install it like an app on this device') + '</p></div></div>' +
-      (isAndroid
-        ? '<p>Tap <b>Download APK</b>, open the downloaded file, allow <b>Install from this source</b> if the phone asks, then tap <b>Install</b>. Updates come automatically — no reinstall needed.</p>' +
-          '<a class="btn pri" data-dl href="' + esc(APK_URL) + '" download>Download APK</a>' +
-          (deferred ? '<button class="btn gh" data-web>Install as web app instead</button>' : '')
-        : (isIOS ? '<p>1. Tap the <b>Share</b> button in Safari.</p><p>2. Choose <b>Add to Home Screen</b>, then <b>Add</b>.</p>'
-                 : (deferred ? '' : '<p>Open the browser menu <b>&#8942;</b> and choose <b>Install app</b> / <b>Add to Home screen</b>.</p>')) +
-          (deferred ? '<button class="btn pri" data-web>Install app</button>' : '')) +
+      '<p style="margin:0">' + (isAndroid ? 'Install the app on this phone' : 'Install it as an app on this computer') + '</p></div></div><div data-body></div>' +
       '<button class="btn gh" data-close>Not now</button></div></div>');
+    var body = m.querySelector('[data-body]');
+    function close() { m.remove(); sheetOpen = false; onPrompt = []; }
+    function paint(state) {
+      if (isAndroid) {
+        body.innerHTML = '<p>Tap <b>Download APK</b>, open the downloaded file, allow <b>Install from this source</b> if the phone asks, then tap <b>Install</b>. Updates come automatically — no reinstall needed.</p>' +
+          '<a class="btn pri" data-dl href="' + esc(APK_URL) + '" download>Download APK</a>' + (deferred ? '<button class="btn gh" data-web>Install as web app instead</button>' : '');
+      } else if (isIOS) {
+        body.innerHTML = '<p>1. Tap the <b>Share</b> button in Safari.</p><p>2. Choose <b>Add to Home Screen</b>, then <b>Add</b>.</p>';
+      } else if (deferred) {
+        body.innerHTML = '<p>Ready. It installs like a normal program, with its own icon on the desktop and in the Start menu.</p><button class="btn pri" data-web>Install now</button>';
+      } else if (state === 'wait') {
+        body.innerHTML = '<p>Getting the app ready to install…</p><div class="spin"></div>';
+      } else {
+        body.innerHTML = '<p style="color:#9a3412"><b>The browser is not offering to install this app yet.</b></p>' +
+          '<p><b>Most common reason:</b> the old “NexGen Softwares” app (installed before the update) is still on this computer and covers this page. Remove it once:</p>' +
+          '<p>1. Open a new tab and go to <b>chrome://apps</b> (Edge: <b>edge://apps</b>).<br>2. Right-click <b>NexGen Softwares</b> → <b>Remove from Chrome</b>.<br>3. Come back here and press <b>Try again</b>.</p>' +
+          '<p style="font-size:12.5px">Other way: click the install icon at the right end of the address bar, or menu <b>&#8942;</b> → <b>Cast, save and share</b> → <b>Install page as app</b>.</p>' +
+          '<button class="btn pri" data-retry>Try again</button>';
+      }
+    }
+    paint(deferred ? 'ready' : 'wait');
+    if (!isAndroid && !isIOS && !deferred) {
+      onPrompt.push(function () { if (sheetOpen) paint('ready'); });
+      setTimeout(function () { if (sheetOpen && !deferred) paint('help'); }, 4000);
+    }
     m.onclick = function (e) {
       var tg = e.target;
-      if (tg === m || tg.hasAttribute('data-close')) { m.remove(); sheetOpen = false; }
-      else if (tg.hasAttribute('data-web')) { m.remove(); sheetOpen = false; webInstall(); }
-      else if (tg.hasAttribute('data-dl')) { setTimeout(function () { m.remove(); sheetOpen = false; }, 400); }
+      if (tg === m || tg.hasAttribute('data-close')) close();
+      else if (tg.hasAttribute('data-web')) { close(); webInstall(); }
+      else if (tg.hasAttribute('data-retry')) location.reload();
+      else if (tg.hasAttribute('data-dl')) setTimeout(close, 400);
     };
   }
   function install() { installSheet(); }
   function webInstall() {
     if (!deferred) return installSheet();
-    deferred.prompt();
-    (deferred.userChoice || Promise.resolve()).then(function (c) { if (c && c.outcome === 'accepted' && btn) { btn.remove(); btn = null; } });
-    deferred = null;
+    var ev = deferred; deferred = null;
+    try { ev.prompt(); } catch (e) { return installSheet(); }
+    (ev.userChoice || Promise.resolve()).then(function (c) {
+      if (c && c.outcome === 'accepted') { if (btn) { btn.remove(); btn = null; } }
+    });
   }
-  window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); deferred = e; if (loggedIn) showInstall(); });
+  window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault(); deferred = e;
+    if (loggedIn) showInstall();
+    var cbs = onPrompt; onPrompt = []; cbs.forEach(function (f) { try { f(); } catch (x) { } });
+  });
   window.addEventListener('appinstalled', function () { if (btn) { btn.remove(); btn = null; } });
 
   /* called once the login is confirmed: show the install button and suggest installing (once per device).
