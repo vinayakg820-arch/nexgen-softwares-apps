@@ -1,6 +1,8 @@
 NexGen Softwares – website (upload this whole ZIP to EdgeOne: nexgensoftwares.edgeone.dev)
 
-/                 Login portal + Super Admin (same link for everyone)
+/                 Main link – sends everyone to the right place
+/admin/           Super Admin panel (its own app – install it from here)
+/portal/          Customer login + their softwares (its own app)
 /billing/         Charvi Computers Billing
 /coaching/        Mauli Coaching Classes
 /leadmaster/      LeadMaster

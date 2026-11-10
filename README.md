@@ -4,7 +4,7 @@ Everything for **https://nexgensoftwares.edgeone.dev** lives here.
 
 | Folder | What |
 |---|---|
-| `website/` | The whole website = the ZIP uploaded to EdgeOne. Portal + Super Admin at the root, one folder per software |
+| `website/` | The whole website = the ZIP uploaded to EdgeOne. `/admin/` Super Admin, `/portal/` customers, one folder per software (each a separate app) |
 | `website/versions.json` | Live version of every software (+ `site` = ZIP version) |
 | `website/nexgen-app.js` | Shared shell in every software: licence check, Install (APK / web app) button, per-app update bar |
 | `website/apk/` | The Android APKs offered by the Install APK button |

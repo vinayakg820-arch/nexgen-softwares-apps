@@ -305,7 +305,7 @@
     gateEl = el('<div class="gate' + (loading ? ' loading' : '') + '">' + inner + '</div>');
     return gateEl;
   }
-  function toLogin() { location.replace(ROOT + '?app=' + encodeURIComponent(APP)); }
+  function toLogin() { location.replace(ROOT + 'portal/?app=' + encodeURIComponent(APP)); }
   function logoutAll() { ls(STORE, null); ls(LIC, null); toLogin(); }
 
   function readSession() { try { var s = JSON.parse(ls(STORE) || 'null'); return s && s.access_token ? s : null; } catch (e) { return null; } }
@@ -338,7 +338,7 @@
       : app && app.state === 'cancelled' ? 'Your <b>' + esc(NAME) + '</b> plan is not active.'
       : 'Your account <b>' + esc(c.code) + '</b> does not include <b>' + esc(NAME) + '</b> yet.';
     var g = showGate('<div class="card"><img class="logo" alt="" src="' + esc(ICON) + '"><h2>' + esc(NAME) + '</h2><p>' + msg + '</p>' +
-      '<div id="wa"></div><a class="btn gh" href="' + esc(ROOT) + '">Go to my softwares</a>' +
+      '<div id="wa"></div><a class="btn gh" href="' + esc(ROOT + 'portal/') + '">Go to my softwares</a>' +
       '<button class="btn gh" id="sw">Log in with another account</button></div>');
     g.querySelector('#sw').onclick = logoutAll;
     supportMobile().then(function (st) {
