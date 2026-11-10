@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8"><script src="../nexgen-app.js" data-app="billing" data-version="1.7.0" data-name="Shubh Laxmi Billing Software" data-icon="icon-192.png" data-color="#1a6cb3"></script>
+    <meta charset="UTF-8"><script src="../nexgen-app.js" data-app="billing" data-version="1.8.0" data-name="Shubh Laxmi Billing Software" data-icon="icon-192.png" data-color="#1a6cb3"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#1a6cb3">
     <script>
@@ -1072,8 +1072,8 @@
         <!-- Header Branding -->
         <header class="w-full max-w-6xl mx-auto flex flex-col items-center mb-12 md:mb-16 text-center mt-4">
             <div onclick="showView('view-dashboard')" class="flex items-center justify-center gap-3 mb-1 relative cursor-pointer group">
-                <div class="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-indigo-200 group-hover:scale-105 transition-transform"><i data-lucide="zap" class="w-6 h-6"></i></div>
-                <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight text-slate-900 group-hover:text-indigo-800 transition-colors">NexGen<span class="text-indigo-600 group-hover:text-indigo-500 transition-colors">Softwares</span></h1>
+                <div id="hdr-brand-icon" class="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-indigo-200 group-hover:scale-105 transition-transform overflow-hidden"><i data-lucide="zap" class="w-6 h-6"></i></div>
+                <h1 id="hdr-brand-name" class="text-2xl md:text-3xl font-extrabold tracking-tight text-slate-900 group-hover:text-indigo-800 transition-colors">NexGen<span class="text-indigo-600 group-hover:text-indigo-500 transition-colors">Softwares</span></h1>
                 
                 <!-- Signature Arrow & Text -->
                 <div class="header-signature absolute top-full right-0 flex flex-col items-end pointer-events-none -mt-1">
@@ -1086,7 +1086,7 @@
                 </div>
             </div>
             <div class="h-1 w-16 bg-indigo-600 rounded-full mt-10 mb-4"></div>
-            <p class="text-slate-500 font-medium text-sm md:text-base mb-2">Enterprise Billing & Inventory Management</p>
+            <p class="text-slate-500 font-medium text-sm md:text-base mb-2">Shubh Laxmi Billing Software</p>
             <h2 id="display-company-name" class="text-xl md:text-4xl font-black text-slate-800 mt-4 animate-float"></h2>
         </header>
 
@@ -3771,6 +3771,7 @@
             sbReady = true;
             sbBadge('ok');
             sbStartPolling();
+            ngsSeedProfile();
         }
         async function sbResume() {
             try {
@@ -4352,8 +4353,8 @@
         });
 
         // --- APP VERSION & UPDATE TRACKING ---
-        const APP_VERSION = "1.7.0";
-        const UPDATE_DESC = "Now Shubh Laxmi Billing Software: every shop has its own private data and logs in through NexGen.";
+        const APP_VERSION = "1.8.0";
+        const UPDATE_DESC = "Your shop name and logo now appear inside the app, on invoices and on the dashboard.";
 
         // --- AUTH & USER ROLES LOGIC ---
         let appUsers = [];
@@ -4569,6 +4570,40 @@
             toggleModal('update-notification-modal', true);
             if (window.lucide) lucide.createIcons();
             fireworks(7);
+        }
+
+        // Customer's own name + logo in the header (from Company Profile)
+        function ngsApplyBrand() {
+            let cp = {}; try { cp = JSON.parse(localStorage.getItem('companyProfile')) || {}; } catch (e) {}
+            const nameEl = document.getElementById('hdr-brand-name'), iconEl = document.getElementById('hdr-brand-icon');
+            if (nameEl && cp.name) nameEl.textContent = cp.name;
+            if (iconEl && cp.logo) { iconEl.className = 'w-14 h-14 rounded-2xl bg-white shadow-xl flex items-center justify-center overflow-hidden border border-slate-200'; iconEl.innerHTML = ''; const im = document.createElement('img'); im.src = cp.logo; im.alt = ''; im.className = 'w-full h-full object-contain'; iconEl.appendChild(im); }
+            if (cp.name) document.title = cp.name + ' · Shubh Laxmi Billing';
+        }
+        // First login (and whenever NexGen updates the registration): copy the customer's
+        // company name, logo, phone, e-mail, address and GSTIN into this shop's Company Profile.
+        async function ngsSeedProfile() {
+            try {
+                if (!sbProfile || sbProfile.role !== 'admin') return;
+                const { data: b, error } = await sb.rpc('my_brand');
+                if (error || !b) return;
+                let cp = {}; try { cp = JSON.parse(localStorage.getItem('companyProfile')) || {}; } catch (e) {}
+                const fresh = !cp._ngsBrandV || (b.brand_v && b.brand_v > cp._ngsBrandV);
+                const before = JSON.stringify(cp);
+                const company = (b.company_name || b.name || '').trim();
+                if (company && (fresh || !cp.name)) cp.name = company;
+                if (b.logo && (fresh || !cp.logo)) cp.logo = b.logo;
+                if (!cp.phone && b.mobile) cp.phone = b.mobile;
+                if (!cp.email && b.email) cp.email = b.email;
+                if (!cp.address && (b.address || b.city)) cp.address = [b.address, b.city].filter(Boolean).join(', ');
+                if (!cp.gstin && b.gstin) cp.gstin = b.gstin;
+                cp._ngsBrandV = b.brand_v || Date.now();
+                if (JSON.stringify(cp) !== before) {
+                    localStorage.setItem('companyProfile', JSON.stringify(cp));   // saved to this shop's cloud data too
+                    if (typeof loadSavedProfile === 'function') loadSavedProfile();
+                }
+                ngsApplyBrand();
+            } catch (e) { console.warn('brand', e); }
         }
 
         function initializeAppCore() {
@@ -9514,6 +9549,7 @@
                 dTitle = loggedU ? `${loggedU.name} Dashboard` : 'User Dashboard';
             }
             document.getElementById('display-company-name').innerText = dTitle;
+            ngsApplyBrand();
             
             // Sync to Invoice Headers
             document.getElementById('prev-comp-name').innerText = companyProfile.name || 'COMPANY NAME';

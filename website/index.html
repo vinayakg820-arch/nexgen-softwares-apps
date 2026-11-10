@@ -6,7 +6,7 @@
 <title>NexGen Softwares</title>
 <meta name="theme-color" content="#1e1b4b">
 <link rel="manifest" href="manifest.json">
-<script src="nexgen-app.js" data-app="portal" data-version="1.5.0" data-name="NexGen Softwares" data-icon="icon-192.png" data-color="#4f46e5"></script>
+<script src="nexgen-app.js" data-app="portal" data-version="1.6.0" data-name="NexGen Softwares" data-icon="icon-192.png" data-color="#4f46e5"></script>
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
@@ -248,7 +248,7 @@ pre.code{background:#0f172a;color:#e2e8f0;padding:14px;border-radius:12px;overfl
 /* =====================================================================
    NexGen Softwares – Super Admin & Customer Portal
    ===================================================================== */
-const APP_VERSION = '1.5.0';
+const APP_VERSION = '1.6.0';
 const SUPABASE_URL = 'https://nqqbduqqiwpaixmrweef.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_eKTOE3ywBI9ye02QFVDmvg_231pdTTJ';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
@@ -415,7 +415,7 @@ function logoPicker(id, current) {
       ${current ? `<img src="${esc(current)}" style="width:100%;height:100%;object-fit:contain" alt="">` : '<i class="fas fa-image" style="color:#cbd5e1;font-size:24px"></i>'}</div>
     <div><label class="btn sm ghost" style="cursor:pointer"><i class="fas fa-upload"></i> Upload logo<input type="file" accept="image/*" id="${id}File" hidden></label>
       <button type="button" class="btn sm ghost" id="${id}Del" ${current ? '' : 'style="display:none"'}><i class="fas fa-xmark"></i> Remove</button>
-      <div class="hint" style="margin-top:4px">Shown as this customer's app icon and name when they install the software / APK.</div></div></div></div>`;
+      <div class="hint" style="margin-top:4px">Shown inside this customer's softwares – dashboard header, invoices and portal.</div></div></div></div>`;
 }
 function bindLogoPicker(root, id, onChange) {
   const prev = $('#' + id + 'Prev', root), del = $('#' + id + 'Del', root);
@@ -424,13 +424,6 @@ function bindLogoPicker(root, id, onChange) {
     catch (ex) { toast(errMsg(ex), 'err'); }
   };
   del.onclick = () => { prev.innerHTML = '<i class="fas fa-image" style="color:#cbd5e1;font-size:24px"></i>'; del.style.display = 'none'; onChange(null); };
-}
-// ask GitHub to build the queued branded APKs (silent if no token: they build within ~3 hours)
-async function buildApksNow(showMsg) {
-  try {
-    const { data } = await sb.functions.invoke('apk-builder', { body: { action: 'dispatch' } });
-    if (showMsg && data && data.message) toast(data.message, data.ok ? 'ok' : 'err');
-  } catch (_) { }
 }
 // big confirmation after a subscription / renewal / payment is saved
 function activatedPopup(c, subs, opts = {}) {
@@ -567,7 +560,7 @@ function renderCustomerPortal(me) {
         <span>${a.state === 'expired' ? 'Expired on' : 'Valid till'} <b>${fmtD(a.end_date)}</b>${ok ? ` · ${a.days_left} days left` : ''}</span></div>
       ${a.app_login ? `<div class="small muted">Login ID for this software: <b class="mono">${esc(a.app_login)}</b></div>` : ''}
       ${host ? `<div class="url"><i class="fas fa-link"></i> ${esc(host)}</div>` : ''}
-      ${ok && /android/i.test(navigator.userAgent) && !sessionStorage.getItem('ngs-apk') ? `<a class="small" href="${esc((me.apks && me.apks[a.code]) || ('apk/NexGen-' + a.code + '.apk'))}" download><i class="fab fa-android"></i> Download Android app (APK)</a>` : ''}
+      ${ok && /android/i.test(navigator.userAgent) && !sessionStorage.getItem('ngs-apk') ? `<a class="small" href="apk/NexGen-${esc(a.code)}.apk" download><i class="fab fa-android"></i> Download Android app (APK)</a>` : ''}
       ${ok && url ? `<a class="btn primary block" href="${esc(url)}"><i class="fas fa-arrow-up-right-from-square"></i> Open ${esc(a.name)}</a>`
         : ok ? `<button class="btn block" disabled>Link coming soon</button>`
           : `<a class="btn danger block" ${support ? `href="${esc(waLink(support, `Hello, please renew ${a.name} for ${c.company_name || c.name} (ID ${c.code}).`))}" target="_blank"` : ''}><i class="fas fa-rotate"></i> Renew – contact NexGen</a>`}
@@ -957,7 +950,7 @@ async function finishWizard(page, list) {
   W.step = 3;
   const createdCust = custById(W.created.id) || W.created;
   showCredentials(page, createdCust, W.password, W.createdSubs, true);
-  if (W.createdSubs && W.createdSubs.length) { activatedPopup(createdCust, W.createdSubs); buildApksNow(false); }
+  if (W.createdSubs && W.createdSubs.length) activatedPopup(createdCust, W.createdSubs);
 }
 
 function credentialsText(c, password, subs) {
@@ -1010,7 +1003,6 @@ function viewAddSoftware(id, preselect) {
       const subs = await run(sb.rpc('admin_add_subscriptions', { p_customer_id: c.id, p_items: list }));
       await loadAll(); location.hash = '#/customer/' + c.id;
       setTimeout(() => activatedPopup(custById(c.id) || c, subs, { title: preselect ? 'Subscription Renewed & Activated' : 'Subscription Activated' }), 150);
-      buildApksNow(false);
     }
   });
 }
@@ -1060,10 +1052,6 @@ function viewCustomer(id) {
           <dt>GSTIN</dt><dd>${esc(c.gstin || '—')}</dd><dt>Registered</dt><dd>${fmtDT(c.created_at)}</dd><dt>Last login</dt><dd>${fmtDT(c.last_login_at)}</dd>
           ${c.notes ? `<dt>Notes</dt><dd>${esc(c.notes)}</dd>` : ''}
         </dl></div>
-      <div class="card card-pad" style="margin-bottom:16px"><h3><i class="fab fa-android" style="color:#3ddc84"></i> Branded APK</h3>
-        <p class="small muted" style="margin-top:0">Each software's APK carries ${esc(c.company_name || c.name)}'s name${c.has_logo ? ' and logo' : ''}.</p>
-        <div id="apkList" class="small muted">Loading…</div>
-        <button class="btn sm ghost" id="apkBuild" style="margin-top:10px"><i class="fas fa-hammer"></i> Build APK again</button></div>
       <div class="card card-pad"><h3>Actions</h3>
         <div style="display:grid;gap:8px">
           <button class="btn ghost" id="cEdit"><i class="fas fa-pen"></i> Edit details</button>
@@ -1080,19 +1068,6 @@ function viewCustomer(id) {
   $$('[data-edit]', page).forEach(b => b.onclick = () => editSub(S.subs.find(s => s.id === b.dataset.edit)));
   $('#cEdit').onclick = () => editCustomer(c);
   $('#cShare').onclick = () => showCredentials(page, c, null, liveSubs(c.id), false);
-  (async () => {
-    let rows = [];
-    try { rows = await run(sb.from('apk_builds').select('*').eq('customer_id', c.id).order('requested_at', { ascending: false }).limit(20)); } catch (_) { }
-    const latest = {}; rows.forEach(r => { if (!latest[r.app_code]) latest[r.app_code] = r; });
-    const lbl = { queued: ['b-pending', 'Waiting to build'], building: ['b-trial', 'Building…'], ready: ['b-active', 'Ready'], failed: ['b-expired', 'Failed'] };
-    const box = $('#apkList'); if (!box) return;
-    box.innerHTML = Object.values(latest).map(r => { const sw = S.softwares.find(s => s.code === r.app_code); const [cl, tx] = lbl[r.status] || ['', r.status];
-      return `<div class="row" style="justify-content:space-between;padding:6px 0"><span>${esc(sw ? sw.name : r.app_code)}</span><span><span class="badge ${cl}">${tx}</span>
-        ${r.status === 'ready' && r.apk_url ? ` <a href="${esc(r.apk_url)}" target="_blank" title="Download"><i class="fas fa-download"></i></a>` : ''}</span></div>`; }).join('') || 'No APK yet – it is created when a software is added.';
-  })();
-  $('#apkBuild').onclick = async () => {
-    try { const n = await run(sb.rpc('admin_queue_apks', { p_customer_id: c.id })); if (!n) return toast('No active software for this customer', 'err'); await buildApksNow(true); viewCustomer(c.id); } catch (e) { toast(errMsg(e), 'err'); }
-  };
   $('#cPw').onclick = () => resetPassword(c);
   $('#cBlock').onclick = async () => {
     const to = c.status === 'blocked' ? 'active' : 'blocked';
@@ -1123,11 +1098,9 @@ async function editCustomer(c) {
     if (!d.name.trim() || digits(d.mobile).length < 10) return toast('Name and a valid mobile are required', 'err');
     Object.keys(d).forEach(k => { d[k] = d[k].trim() || null; });
     if (d.gstin) d.gstin = d.gstin.toUpperCase();
-    const brandChanged = logoChanged || (d.company_name || null) !== (c.company_name || null) || d.name !== c.name;
     if (logoChanged) d.logo = logo;
     try {
       await run(sb.from('customers').update(d).eq('id', c.id)); m.close(); toast('Saved');
-      if (brandChanged) { await run(sb.rpc('admin_queue_apks', { p_customer_id: c.id })); buildApksNow(true); }
       refresh();
     } catch (e) { toast(errMsg(e), 'err'); }
   };
@@ -1487,13 +1460,6 @@ async function checkNexGenLicence(softwareCode, customerId) {
       <button class="btn primary" type="submit"><i class="fas fa-floppy-disk"></i> Save settings</button>
     </form>
     <div>
-      <div class="card card-pad" style="margin-bottom:16px"><h3><i class="fab fa-android" style="color:#3ddc84"></i> Branded APKs</h3>
-        <p class="small muted" style="margin-top:0">Every customer gets APKs with their own company name and logo. Without a GitHub token they are built automatically every 3 hours; with a token they are ready in about 5 minutes.</p>
-        <div class="field"><label>GitHub token <span id="ghState" class="badge b-free">…</span></label>
-          <div class="inp-group"><input class="inp mono" id="ghTok" type="password" placeholder="github_pat_…" autocomplete="off"><button type="button" class="btn ghost" id="ghSave">Save</button></div>
-          <span class="hint">Fine-grained token for repo nexgen-softwares-apps with “Actions: Read and write”. It is stored on the server and never shown again.</span></div>
-        <button type="button" class="btn sm ghost" id="ghBuild"><i class="fas fa-hammer"></i> Build waiting APKs now</button>
-      </div>
       <form class="card card-pad" id="mypw" style="margin-bottom:16px">
         <h3>Change my password</h3>
         <div class="field"><label>New password</label><input class="inp" type="password" id="np1" autocomplete="new-password" minlength="8"></div>
@@ -1508,10 +1474,6 @@ async function checkNexGenLicence(softwareCode, customerId) {
     </div>
   </div>`;
   $('#cpySnip').onclick = () => copy(snippet);
-  const ghState = async () => { try { const on = await run(sb.rpc('admin_github_token_set')); $('#ghState').className = 'badge ' + (on ? 'b-active' : 'b-pending'); $('#ghState').textContent = on ? 'Saved' : 'Not set'; } catch (_) { } };
-  ghState();
-  $('#ghSave').onclick = async () => { try { await run(sb.rpc('admin_set_github_token', { p_token: $('#ghTok').value })); $('#ghTok').value = ''; toast('Token saved'); ghState(); } catch (e) { toast(errMsg(e), 'err'); } };
-  $('#ghBuild').onclick = () => buildApksNow(true);
   $('#stf').onsubmit = async e => {
     e.preventDefault();
     const f = Object.fromEntries(new FormData(e.target));

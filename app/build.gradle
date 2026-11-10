@@ -18,8 +18,7 @@ android {
   defaultConfig {
     minSdk 21
     targetSdk 34
-    // branded builds pass a higher versionCode so they install over the standard APK
-    versionCode((project.findProperty('brandVersionCode') ?: '2') as int)
+    versionCode 2
     versionName '1.1.0'
   }
 
@@ -29,9 +28,7 @@ android {
       create(key) {
         dimension 'app'
         applicationId a.id
-        // a branded (per-customer) build replaces the app name with the customer's company name
-        def bApp = project.findProperty('brandApp'), bName = project.findProperty('brandName')
-        resValue 'string', 'app_name', (bApp == key && bName) ? bName.toString() : a.name
+        resValue 'string', 'app_name', a.name
         resValue 'color', 'brand', a.color
         manifestPlaceholders = [launchUrl: "https://${HOST}${a.path}?src=apk", hostName: HOST]
       }

@@ -17,7 +17,6 @@
   var ds = me.dataset || {};
   var APP = ds.app || 'portal';
   var NAME = ds.name || document.title || 'NexGen';
-  var PRODUCT = NAME;
   var ICON = new URL(ds.icon || 'icon-192.png', location.href).href;
   var COLOR = ds.color || '#4f46e5';
   var ROOT = new URL('./', me.src || location.href).href;          // site root (this file lives there)
@@ -38,7 +37,6 @@
   } catch (e) { }
   var standalone = inApk || (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
   var APK_URL = ROOT + 'apk/NexGen-' + APP + '.apk';
-  var BRAND_API = SB + '/functions/v1/app-brand';
   var loggedIn = false;
 
   function ls(k, v) { try { if (v === undefined) return localStorage.getItem(k); if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) { return null; } }
@@ -135,32 +133,12 @@
   window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); deferred = e; if (loggedIn) showInstall(); });
   window.addEventListener('appinstalled', function () { if (btn) { btn.remove(); btn = null; } });
 
-  /* called once the login is confirmed: switch to the customer's own name + logo, then suggest installing */
-  function setLink(rel, href) {
-    var l = document.querySelectorAll('link[rel="' + rel + '"]');
-    for (var i = 1; i < l.length; i++) l[i].parentNode.removeChild(l[i]);
-    var link = l[0] || document.head.appendChild(document.createElement('link'));
-    link.rel = rel; link.href = href;
-    return link;
-  }
+  /* called once the login is confirmed: show the install button and suggest installing (once per device).
+     The app / APK keeps the SOFTWARE's own name + icon, so two softwares stay easy to tell apart;
+     the customer's name + logo are shown inside the software itself. */
   function afterLogin(info) {
     info = info || {};
-    if (info.tenant_code && APP !== 'portal') {
-      var company = String(info.company || '').trim();
-      var q = '?c=' + encodeURIComponent(info.tenant_code) + '&v=' + (info.brand_v || 0);
-      setLink('manifest', BRAND_API + q + '&app=' + encodeURIComponent(APP));
-      if (info.has_logo) { ICON = BRAND_API + q + '&logo=1'; setLink('apple-touch-icon', ICON); }
-      if (company) {
-        NAME = company;
-        var meta = document.querySelector('meta[name="apple-mobile-web-app-title"]') || document.head.appendChild(document.createElement('meta'));
-        meta.name = 'apple-mobile-web-app-title'; meta.content = company;
-      }
-    }
-    if (info.apk_url) {
-      // Supabase storage: ask for a real download (otherwise the phone may just open the file URL)
-      var fname = (String(NAME || APP).replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '') || APP) + '.apk';
-      APK_URL = info.apk_url + (info.apk_url.indexOf('?') < 0 ? '?' : '&') + 'download=' + encodeURIComponent(fname);
-    }
+    if (info.company) window.NexGenBrand = { company: info.company, code: info.tenant_code };
     loggedIn = true;
     if (standalone) return;
     showInstall();
@@ -304,8 +282,7 @@
             ls(LIC, JSON.stringify({ ok: true, until: app.end_date, who: me.customer.code }));
             unlock();
             var c = me.customer || {};
-            afterLogin({ tenant_code: c.tenant_code || c.code, company: c.company_name || c.name, has_logo: c.has_logo, brand_v: c.brand_v,
-                         apk_url: me.apks && me.apks[APP] });
+            afterLogin({ tenant_code: c.tenant_code || c.code, company: c.company_name || c.name });
             if (app.days_left <= 5) soonBar(app);
             return;
           }
