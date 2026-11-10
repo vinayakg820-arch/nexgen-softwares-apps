@@ -1,0 +1,55 @@
+name: Branded customer APKs
+# Builds an APK with the customer's own company name + logo for every queued request in NexGen Super Admin.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '23 */3 * * *'   # every 3 hours (instant builds need a GitHub token in Super Admin → Settings)
+concurrency: { group: branded-apk, cancel-in-progress: false }
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      API: https://nqqbduqqiwpaixmrweef.supabase.co/functions/v1/apk-builder
+      ANON: sb_publishable_eKTOE3ywBI9ye02QFVDmvg_231pdTTJ
+    steps:
+      - uses: actions/checkout@v4
+      - name: Anything to build?
+        id: claim
+        run: |
+          SECRET=$(tr -d '\n' < signing/apk-upload-secret.txt)
+          curl -sS -X POST "$API" -H "apikey: $ANON" -H "x-build-secret: $SECRET" -H "Content-Type: application/json" -d '{"action":"claim","limit":8}' > builds.json
+          head -c 300 builds.json; echo
+          N=$(python3 -c "import json;print(len(json.load(open('builds.json')).get('builds',[])))")
+          echo "count=$N" >> $GITHUB_OUTPUT
+      - if: steps.claim.outputs.count != '0'
+        uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '17' }
+      - if: steps.claim.outputs.count != '0'
+        uses: gradle/actions/setup-gradle@v4
+        with: { gradle-version: '8.9' }
+      - if: steps.claim.outputs.count != '0'
+        name: Build each branded APK
+        run: |
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
+          pip install --quiet pillow
+          cp signing/nexgen-release.jks app/release.jks
+          export KEYSTORE_PASSWORD=$(tr -d '\n' < signing/keystore-password.txt) KEY_ALIAS=nexgen
+          SECRET=$(tr -d '\n' < signing/apk-upload-secret.txt)
+          python3 .github/scripts/branded_list.py > list.tsv
+          VC=$((100 + GITHUB_RUN_NUMBER))
+          while IFS=$'\t' read -r ID APP CODE NAME; do
+            echo "::group::$APP for $CODE ($NAME)"
+            git checkout -- app/src || true
+            python3 .github/scripts/branded_icons.py "$ID" "$APP"
+            FLAVOR="$(echo ${APP:0:1} | tr a-z A-Z)${APP:1}"
+            rm -rf app/build/outputs/apk
+            if gradle --no-daemon -q "assemble${FLAVOR}Release" -PbrandApp="$APP" -PbrandName="$NAME" -PbrandVersionCode=$VC; then
+              APK=$(ls app/build/outputs/apk/$APP/release/*.apk | head -1)
+              curl -sS -X POST "$API?action=upload&id=$ID" -H "apikey: $ANON" -H "x-build-secret: $SECRET" \
+                   -H "Content-Type: application/vnd.android.package-archive" --data-binary @"$APK"; echo
+            else
+              curl -sS -X POST "$API" -H "apikey: $ANON" -H "x-build-secret: $SECRET" -H "Content-Type: application/json" \
+                   -d "{\"action\":\"fail\",\"id\":\"$ID\",\"error\":\"gradle build failed (run $GITHUB_RUN_ID)\"}"; echo
+            fi
+            echo "::endgroup::"
+          done < list.tsv
