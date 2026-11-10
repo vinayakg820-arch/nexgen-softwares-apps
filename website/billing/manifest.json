@@ -1,4 +1,5 @@
 {
+  "id": "/billing/",
   "name": "Shubh Laxmi Billing Software",
   "short_name": "Shubh Laxmi",
   "description": "Billing, inventory and sale records.",
@@ -37,6 +38,5 @@
       "type": "image/png",
       "purpose": "maskable"
     }
-  ],
-  "id": "./"
+  ]
 }

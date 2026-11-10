@@ -1,23 +1,28 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>NexGen Softwares</title><meta name="theme-color" content="#1e1b4b"><link rel="icon" href="icon-192.png">
-<style>html,body{margin:0;height:100%;background:#1e1b4b;display:grid;place-items:center;font-family:system-ui;color:#c7d2fe}</style></head>
-<body><p>Opening NexGen Softwares…</p>
+<title>NexGen Softwares</title><meta name="theme-color" content="#1e1b4b"><link rel="icon" href="/icon-192.png">
+<link rel="manifest" href="/legacy-manifest.json">
+<style>html,body{margin:0;height:100%;background:#1e1b4b;display:grid;place-items:center;font-family:system-ui;color:#c7d2fe;text-align:center}
+.s{width:28px;height:28px;border:3px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:r .7s linear infinite;margin:14px auto 0}@keyframes r{to{transform:rotate(360deg)}}</style></head>
+<body><div><p>Opening NexGen Softwares…</p><div class="s"></div></div>
 <script>
-// The main link stays the same. Super Admin lives in /admin/, customers in /portal/, each software in its own folder,
-// so every one installs and updates as a separate app.
+// Main link: Super Admin lives in /admin/, customers in /portal/, every software in its own folder (separate apps).
 (function () {
-  var go = function () { location.replace('portal/' + location.search + location.hash); };
+  var target = '/portal/' + location.search + location.hash;
+  var go = function () { location.replace(target); };
   try {
-    // remove the old web app that was installed on the whole site (it made softwares open inside the admin window)
+    // remove the old site-wide service worker
     if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
       navigator.serviceWorker.getRegistrations().then(function (rs) {
-        return Promise.all(rs.filter(function (r) { return new URL(r.scope).pathname === '/'; }).map(function (r) { return r.unregister(); }));
-      }).then(go, go);
-      setTimeout(go, 1500);
-      return;
+        rs.forEach(function (r) { if (new URL(r.scope).pathname === '/') r.unregister(); });
+      });
     }
-  } catch (e) { }
-  go();
+    // give the browser a moment to read the manifest above, which shrinks the OLD installed app
+    // (it covered the whole site and stopped the softwares from being installed separately)
+    var oldApp = window.matchMedia && matchMedia('(display-mode: standalone)').matches;
+    var first = !localStorage.getItem('ngs-legacy-fixed');
+    localStorage.setItem('ngs-legacy-fixed', String(Date.now()));
+    setTimeout(go, oldApp ? 2500 : (first ? 600 : 0));
+  } catch (e) { go(); }
 })();
 </script></body></html>

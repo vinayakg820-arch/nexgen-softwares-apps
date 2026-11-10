@@ -1,8 +1,8 @@
 {
-  "id": "./",
+  "id": "/portal/",
   "name": "NexGen Softwares",
   "short_name": "NexGen",
-  "description": "NexGen Softwares \u2013 customer portal",
+  "description": "NexGen Softwares – customer portal",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

@@ -137,10 +137,8 @@
       } else if (state === 'wait') {
         body.innerHTML = '<p>Getting the app ready to install…</p><div class="spin"></div>';
       } else {
-        body.innerHTML = '<p style="color:#9a3412"><b>The browser is not offering to install this app yet.</b></p>' +
-          '<p><b>Most common reason:</b> the old “NexGen Softwares” app (installed before the update) is still on this computer and covers this page. Remove it once:</p>' +
-          '<p>1. Open a new tab and go to <b>chrome://apps</b> (Edge: <b>edge://apps</b>).<br>2. Right-click <b>NexGen Softwares</b> → <b>Remove from Chrome</b>.<br>3. Come back here and press <b>Try again</b>.</p>' +
-          '<p style="font-size:12.5px">Other way: click the install icon at the right end of the address bar, or menu <b>&#8942;</b> → <b>Cast, save and share</b> → <b>Install page as app</b>.</p>' +
+        body.innerHTML = '<p style="color:#9a3412"><b>The browser has not offered the install yet.</b></p>' +
+          '<p>• Already installed? Open it from the desktop / app list.<br>• Press <b>Try again</b> once (the browser sometimes needs a reload).<br>• Still nothing: use the install icon at the right end of the address bar, or ⋮ menu → <b>Cast, save and share → Install</b>.</p>' +
           '<button class="btn pri" data-retry>Try again</button>';
       }
     }

@@ -1,8 +1,8 @@
 {
-  "id": "./",
+  "id": "/admin/",
   "name": "NexGen Super Admin",
   "short_name": "NG Admin",
-  "description": "NexGen Softwares \u2013 super admin panel",
+  "description": "NexGen Softwares – super admin panel",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
