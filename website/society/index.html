@@ -1,15 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8"><script src="../nexgen-app.js" data-app="society" data-version="2.8.1" data-name="Society Connect" data-icon="icon-192.png" data-color="#4f46e5"></script>
+    <meta charset="UTF-8"><script src="../nexgen-app.js" data-app="society" data-gate="off" data-version="2.9.0" data-name="Society Connect" data-icon="icon-192.png" data-color="#4f46e5"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#4f46e5">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="SocietyConnect">
     <!-- ===== APP VERSION — bump this on every release; phones see the update popup ===== -->
-    <meta name="app-version" content="2.8.1">
-    <meta name="app-release-notes" content="Payment screenshots are deleted automatically once the payment is approved (saves storage)|App guide for first-time users (replay with the ? button)|Ref / UTR number read automatically from the payment screenshot">
+    <meta name="app-version" content="2.9.0">
+    <meta name="app-release-notes" content="Society Connect now runs on the NexGen Softwares cloud – every society's data is separate|Opens straight on the login page|The main member sets up the society: details, committee and flats">
     <link rel="manifest" href="manifest.json?v=203">
     <link rel="icon" href="icon-192.png">
     <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
@@ -536,6 +536,7 @@
         const formatDate = (dateString) => new Date(dateString).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit' });
         const formatRole = (role) => {
             if(!role) return '';
+            if (role === 'admin') return 'Main Member';
             return role.charAt(0).toUpperCase() + role.slice(1).replace('_', ' ');
         };
         
@@ -707,16 +708,43 @@
                 simulateAutoCleanups();
                 processAutoBilling(); 
                 render();
-            try { localStorage.setItem('sm_session', JSON.stringify({ token: sessionToken, user_id: user.id })); } catch (e) {}
+            try { localStorage.setItem('sm_session', JSON.stringify({ token: sessionToken, user_id: user.id, origin: sessionOrigin })); } catch (e) {}
+            const mySoc = db.societies.find(s => s.id === user.societyId);
+            const needsSetup = !!(user.owner && mySoc && mySoc.setupDone === false);
+            if (window.NexGenShell && NexGenShell.afterLogin) NexGenShell.afterLogin({ company: mySoc && mySoc.name, suggest: !needsSetup });   // one popup at a time
+            // first visit of the main member: fill in the society's own details (start month, opening balance, dues, UPI…)
+            if (needsSetup) { let tries = 0; const ask = () => {                      // after the app guide / greeting has been closed
+                if (!currentUser || !currentUser.owner || mySoc.setupDone !== false || ++tries > 200) return;
+                if (modalOpen() || document.querySelector('.tour, #cg-wrap')) return setTimeout(ask, 1500);
+                openModal('editSocietyModal'); showToast('Welcome! Please complete your society details once.');
+            }; setTimeout(ask, 1200); }
         }
 
+        let sessionOrigin = null;      // set when this login came from the main NexGen link (no second login needed)
+        const isOwner = () => !!(currentUser && currentUser.role === 'committee' && currentUser.owner);
+        // logged in on the main NexGen link (society's main member, or the super admin -> demo society)? then open directly
+        async function loginFromNexGen(saved) {
+            try {
+                if (!window.NexGenShell || !NexGenShell.session) return null;
+                const ng = await NexGenShell.session();
+                if (!ng || !ng.user) return null;
+                if (saved && saved.origin === ng.user.id) return null;                     // already using it
+                if (sessionStorage.getItem('sc_no_auto') === ng.user.id) return null;      // pressed Log Out here
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/sc_login_session`, { method: 'POST',
+                    headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + ng.access_token, 'Content-Type': 'application/json' }, body: '{}' });
+                const r = res.ok ? await res.json() : null;
+                return r && r.token ? { token: r.token, user_id: r.user_id, origin: ng.user.id } : null;
+            } catch (e) { return null; }
+        }
         function clearSavedSession() { try { localStorage.removeItem('sm_session'); } catch (e) {} }
 
         async function login(email, password) {
             let r;
-            try { r = await sbRpc('app_login', { p_email: email, p_password: password }); }
+            try { r = await sbRpc('sc_login', { p_email: email, p_password: password }); }
             catch (e) { showToast('Cannot reach server: ' + e.message, 'error'); return; }
+            if (r && r.setup) { showToast('Welcome! Please set your password first…'); setTimeout(() => { location.href = '../portal/?app=society'; }, 900); return; }
             if (!r) { showToast('Invalid ID or Password!', 'error'); return; }
+            sessionOrigin = null;
 
             sessionToken = r.token;
             try { await pullAll(); }
@@ -753,8 +781,10 @@
             clearTimeout(persistTimer);
             await persist();
             await Promise.race([Push.unlink(), new Promise(r => setTimeout(r, 2500))]);   // stop this device getting the old user's alerts
+            try { if (sessionToken) sbRpc('sc_logout', { p_token: sessionToken }).catch(() => {}); } catch (e) {}
+            try { if (sessionOrigin) sessionStorage.setItem('sc_no_auto', sessionOrigin); } catch (e) {}
             clearSavedSession();
-            sessionToken = null;
+            sessionToken = null; sessionOrigin = null;
             resetLocalData();
             currentUser = null;
             currentView = 'login';
@@ -764,7 +794,7 @@
         }
 
         function hasRight(right) {
-            if (currentUser && currentUser.role === 'developer') return true;
+            if (currentUser && (currentUser.role === 'developer' || currentUser.owner === true)) return true;
             if (currentUser && currentUser.role === 'committee' && Array.isArray(currentUser.rights) && currentUser.rights.includes(right)) return true;
             return false;
         }
@@ -825,164 +855,27 @@
         };
 
         function renderLogin() {
-            const ic = c => c.startsWith('fab') ? c : 'fas ' + c;
-            const tick = LP.ticker.map(t => `<span class="flex items-center gap-8 text-sm font-semibold whitespace-nowrap">${t}<span class="text-cyan-300">\u2726</span></span>`).join('');
-            const wwSteps = LP.ww.map((w, i) => `
-                <div class="rv grid md:grid-cols-[200px_1fr] gap-4 md:gap-8 items-center bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-slate-100" style="transition-delay:${i * .08}s">
-                    <div class="flex md:block items-center gap-3"><div class="w-12 h-12 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center text-lg md:mb-3"><i class="fas ${w[0]}"></i></div><div><p class="text-[11px] font-bold tracking-widest text-slate-400">STEP 0${i + 1}</p><h3 class="font-bold text-slate-900">${w[1]}</h3></div></div>
-                    <div>
-                        <p class="wo flex gap-3 text-slate-500"><span class="text-xl">\ud83d\ude2c</span>${w[2]}</p>
-                        <p class="wi flex gap-3 text-slate-800 font-medium"><span class="text-xl">\ud83d\ude0e</span>${w[3]}</p>
-                    </div>
-                </div>`).join('');
-            const feats = LP.feats.map((f, i) => `
-                <div class="rv lift glass rounded-2xl p-5" style="transition-delay:${(i % 4) * .08}s">
-                    <div class="w-12 h-12 rounded-xl bg-gradient-to-br ${f[1]} flex items-center justify-center text-white text-lg shadow-lg mb-4"><i class="${ic(f[0])}"></i></div>
-                    <h3 class="font-bold text-white mb-1">${f[2]}</h3><p class="text-sm text-slate-400">${f[3]}</p>
-                </div>`).join('');
-            const roleBtns = LP.roles.map((r, i) => `<button onclick="setRole(${i})" class="rt-btn ${i === 0 ? 'on' : ''}"><i class="fas ${r[1]} mr-2"></i>${r[0]}</button>`).join('');
-            const rolePanels = LP.roles.map((r, i) => `
-                <div class="rt-p ${i === 0 ? 'on' : ''} md:grid-cols-2 gap-8 items-center">
-                    <div>
-                        <h3 class="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-4">${r[2]}</h3>
-                        <ul class="space-y-3">${r[3].map(x => `<li class="flex gap-3 text-slate-600"><i class="fas fa-check-circle text-emerald-500 mt-1"></i>${x}</li>`).join('')}</ul>
-                        <button onclick="showLogin()" class="mt-6 inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white font-semibold px-6 py-3 rounded-full">Login as ${r[0].toLowerCase()} <i class="fas fa-arrow-right text-sm"></i></button>
-                    </div>
-                    <div class="bg-gradient-to-br from-indigo-600 to-cyan-600 rounded-3xl p-5 text-white shadow-2xl mt-8 md:mt-0">
-                        <p class="text-xs uppercase tracking-widest text-white/70 mb-3">Example ${r[0].toLowerCase()} view</p>
-                        <div class="grid grid-cols-3 gap-3">${r[4].map(t => `<div class="bg-white/15 rounded-xl p-3"><p class="text-[11px] text-white/70">${t[0]}</p><p class="font-extrabold text-lg">${t[1]}</p></div>`).join('')}</div>
-                        <div class="mt-3 space-y-2">${['A-101', 'A-102', 'B-204'].map((f, k) => `<div class="flex justify-between bg-white/10 rounded-lg px-3 py-2 text-sm"><span>Flat ${f}</span><span class="font-semibold">${k === 1 ? 'Pending' : 'Paid \u2713'}</span></div>`).join('')}</div>
-                    </div>
-                </div>`).join('');
-            const steps = LP.steps.map((st, i) => `
-                <div class="rv relative pl-16 pb-8 last:pb-0" style="transition-delay:${i * .07}s">
-                    <div class="absolute left-0 top-0 w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-cyan-400 text-white font-extrabold flex items-center justify-center shadow-lg">${i + 1}</div>
-                    ${i < LP.steps.length - 1 ? '<div class="absolute left-6 top-12 bottom-0 w-px bg-gradient-to-b from-indigo-300 to-transparent"></div>' : ''}
-                    <h3 class="font-bold text-lg text-slate-900">${st[0]}</h3><p class="text-slate-500">${st[1]}</p>
-                </div>`).join('');
-            const nav = [['why', 'Why SocietyConnect'], ['features', 'Features'], ['roles', 'Who it\u2019s for'], ['process', 'How it works'], ['contact', 'Contact']];
+            const sup = waDigits((db.settings && db.settings.supportNumber) || '');
             return `
-                <div class="landing relative overflow-hidden">
-                    <header id="lnav" class="fixed top-0 inset-x-0 z-30 transition-all">
-                        <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-                            <a href="#top" class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-cyan-400 flex items-center justify-center shadow-lg"><i class="fas fa-building text-white"></i></div>
-                                <div class="leading-tight"><p class="font-extrabold text-lg tracking-tight">SocietyConnect</p><p class="text-[11px] text-slate-400 hidden sm:block">by Nexgen Softwares</p></div>
-                            </a>
-                            <nav class="hidden lg:flex items-center gap-7 text-sm font-medium text-slate-300">${nav.map(n => `<a href="#${n[0]}" class="hover:text-white transition-colors">${n[1]}</a>`).join('')}</nav>
-                            <div class="flex items-center gap-2">
-                                <button onclick="showLogin()" class="inline-flex items-center gap-2 bg-white text-slate-900 hover:bg-indigo-50 font-semibold text-sm px-5 py-2.5 rounded-full shadow-lg transition-transform hover:scale-105"><i class="fas fa-sign-in-alt"></i> Login</button>
-                                <button onclick="toggleMenu()" aria-label="Menu" class="lg:hidden w-10 h-10 rounded-full glass flex items-center justify-center"><i class="fas fa-bars"></i></button>
-                            </div>
-                        </div>
-                        <div id="mmenu" class="hidden lg:hidden bg-slate-950/95 backdrop-blur border-t border-white/10 px-5 py-3">${nav.map(n => `<a href="#${n[0]}" onclick="toggleMenu()" class="block py-3 text-slate-200 border-b border-white/5 last:border-0">${n[1]}</a>`).join('')}</div>
-                    </header>
-
-                    <section id="top" class="relative pt-28 pb-16 sm:pt-36">
-                        <div class="blob w-72 h-72 bg-indigo-500 -top-16 -left-10"></div>
-                        <div class="blob w-80 h-80 bg-cyan-500 bottom-0 right-0" style="animation-delay:-5s"></div>
-                        <div class="relative max-w-6xl mx-auto px-5 sm:px-6 grid lg:grid-cols-2 gap-12 items-center">
-                            <div class="rv">
-                                <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/15 text-cyan-300 text-xs font-bold tracking-wider mb-5"><span class="bg-cyan-400 text-slate-900 rounded px-1.5">NEW</span> Society management made simple \ud83c\udfe2</span>
-                                <h1 class="text-4xl sm:text-6xl font-extrabold leading-[1.1] mb-5">Run your society <span class="hero-title">without the chaos.</span></h1>
-                                <p class="text-slate-300 text-lg max-w-xl">Billing, payments, expenses and complaints in one app. <strong class="text-white">Your committee stays organised and every resident stays informed.</strong></p>
-                                <div class="flex flex-wrap gap-3 mt-8">
-                                    <button onclick="showLogin()" class="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-cyan-500 hover:from-indigo-400 hover:to-cyan-400 text-white font-semibold px-7 py-3.5 rounded-full shadow-lg shadow-indigo-900/40 transition-transform hover:scale-105">Login <i class="fas fa-arrow-right text-sm"></i></button>
-                                    <a href="#why" class="inline-flex items-center gap-2 glass hover:bg-white/15 font-semibold px-7 py-3.5 rounded-full">See how it helps \u26a1</a>
-                                </div>
-                                <div class="flex flex-wrap gap-x-6 gap-y-2 mt-8 text-sm text-slate-300">${['Automatic billing', 'Mobile-first', 'Secure cloud data'].map(t => `<span class="flex items-center gap-2"><i class="fas fa-check-circle text-emerald-400"></i>${t}</span>`).join('')}</div>
-                            </div>
-                            <div class="rv relative max-w-md w-full mx-auto lg:ml-auto" style="transition-delay:.15s">
-                                <div class="glass rounded-3xl p-4 sm:p-5">
-                                    <div class="flex items-center justify-between mb-4"><div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-rose-400"></span><span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span><span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span></div><span class="text-xs text-slate-400">Sunrise Heights \u00b7 Dashboard</span></div>
-                                    <div class="grid grid-cols-3 gap-2 mb-3">${[['Collected', '\u20b91.2L', 'text-emerald-300'], ['Pending', '\u20b918K', 'text-amber-300'], ['Complaints', '3', 'text-pink-300']].map(t => `<div class="bg-white/10 rounded-xl p-3"><p class="text-[11px] text-slate-400">${t[0]}</p><p class="font-extrabold text-xl ${t[2]}">${t[1]}</p></div>`).join('')}</div>
-                                    <div class="space-y-2">${[['A-101', 'Paid', 'bg-emerald-500/20 text-emerald-300'], ['A-102', 'Pending', 'bg-amber-500/20 text-amber-300'], ['B-204', 'Paid', 'bg-emerald-500/20 text-emerald-300'], ['C-301', 'Paid', 'bg-emerald-500/20 text-emerald-300']].map(r => `<div class="flex items-center justify-between bg-white/5 rounded-xl px-4 py-2.5"><span class="text-sm font-medium">Flat ${r[0]}</span><span class="text-xs font-bold px-2.5 py-1 rounded-full ${r[2]}">${r[1]}</span></div>`).join('')}</div>
-                                </div>
-                                <div class="chip-float absolute -top-4 -right-2 sm:-right-6 bg-white text-slate-800 rounded-2xl shadow-2xl px-4 py-3 text-sm"><span class="font-bold">\ud83d\udd14 Payment received</span><br><span class="text-slate-500 text-xs">Flat B-204 \u00b7 Receipt ready</span></div>
-                                <div class="chip-float absolute -bottom-5 -left-2 sm:-left-6 bg-white text-slate-800 rounded-2xl shadow-2xl px-4 py-3 text-sm" style="animation-delay:-3s"><span class="font-bold">\u2705 Bills generated</span><br><span class="text-slate-500 text-xs">All flats \u00b7 This month</span></div>
-                                <p class="text-center text-xs text-slate-500 mt-9">\u2191 Example dashboard</p>
-                            </div>
-                        </div>
-                    </section>
-
-                    <div class="bg-gradient-to-r from-indigo-600 via-indigo-500 to-cyan-500 py-4 overflow-hidden"><div class="mq flex gap-8 w-max">${tick}${tick}</div></div>
-
-                    <section id="why" class="sec bg-slate-50 text-slate-800 py-20">
-                        <div class="max-w-4xl mx-auto px-5 sm:px-6">
-                            <div class="text-center mb-10 rv"><p class="text-indigo-600 font-bold text-sm tracking-widest mb-2">THE SIMPLE TRUTH</p>
-                                <h2 class="text-3xl sm:text-5xl font-extrabold text-slate-900 mb-3">Still running on WhatsApp and notebooks?</h2>
-                                <p class="text-slate-500">Flip the switch and see the difference.</p>
-                                <div class="inline-flex mt-6 p-1.5 bg-slate-200 rounded-full"><button id="wwBtn0" onclick="setWW('without')" class="ww-btn on">\ud83d\ude2c Without it</button><button id="wwBtn1" onclick="setWW('with')" class="ww-btn">\ud83d\ude0e With SocietyConnect</button></div>
-                            </div>
-                            <div id="ww" data-mode="without" class="space-y-4">${wwSteps}</div>
-                            <p class="text-center text-slate-600 font-semibold mt-10 rv">SocietyConnect is your society\u2019s digital office. Always open, never loses a record.</p>
-                        </div>
-                    </section>
-
-                    <section id="features" class="sec relative py-20">
-                        <div class="blob w-72 h-72 bg-fuchsia-500 top-10 right-0" style="animation-delay:-4s"></div>
-                        <div class="relative max-w-6xl mx-auto px-5 sm:px-6">
-                            <div class="text-center mb-12 rv"><p class="text-cyan-300 font-bold text-sm tracking-widest mb-2">BUILT RIGHT</p><h2 class="text-3xl sm:text-5xl font-extrabold mb-3">Everything your society needs, <span class="hero-title">fully loaded.</span></h2><p class="text-slate-400 max-w-2xl mx-auto">Not just pretty screens. Real tools that save the committee hours every month.</p></div>
-                            <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">${feats}</div>
-                        </div>
-                    </section>
-
-                    <section id="roles" class="sec bg-white text-slate-800 py-20">
-                        <div class="max-w-5xl mx-auto px-5 sm:px-6">
-                            <div class="text-center mb-8 rv"><p class="text-indigo-600 font-bold text-sm tracking-widest mb-2">WHO IT\u2019S FOR</p><h2 class="text-3xl sm:text-5xl font-extrabold text-slate-900 mb-3">One app. <span class="text-indigo-600">The right view for everyone.</span></h2><p class="text-slate-500">Pick a role to see what it gets.</p></div>
-                            <div class="flex justify-center gap-3 mb-10">${roleBtns}</div>
-                            <div class="rv">${rolePanels}</div>
-                        </div>
-                    </section>
-
-                    <section id="process" class="sec bg-slate-50 text-slate-800 py-20">
-                        <div class="max-w-3xl mx-auto px-5 sm:px-6">
-                            <div class="text-center mb-12 rv"><p class="text-indigo-600 font-bold text-sm tracking-widest mb-2">HOW IT WORKS</p><h2 class="text-3xl sm:text-5xl font-extrabold text-slate-900 mb-3">From setup to <span class="text-indigo-600">smooth sailing</span> in 5 steps.</h2></div>
-                            <div>${steps}</div>
-                        </div>
-                    </section>
-
-                    <section id="contact" class="sec relative py-20">
-                        <div class="max-w-4xl mx-auto px-5 sm:px-6">
-                            <div class="rv glass rounded-3xl p-8 sm:p-12 text-center bg-gradient-to-br from-indigo-600/30 to-cyan-600/20">
-                                <p class="text-cyan-300 font-bold text-sm tracking-widest mb-2">LET\u2019S DO THIS</p>
-                                <h2 class="text-3xl sm:text-5xl font-extrabold mb-3">Ready to bring your society <span class="hero-title">online?</span></h2>
-                                <p class="text-slate-300 max-w-xl mx-auto mb-8">Talk to us for a demo or to get your society set up. We reply fast, with no jargon.</p>
-                                <div class="flex flex-wrap justify-center gap-3">
-                                    <button onclick="landingWA()" class="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-white font-semibold px-7 py-3.5 rounded-full shadow-lg transition-transform hover:scale-105"><i class="fab fa-whatsapp text-lg"></i> WhatsApp us</button>
-                                    <button onclick="landingCall()" class="inline-flex items-center gap-2 glass hover:bg-white/15 font-semibold px-7 py-3.5 rounded-full"><i class="fas fa-phone-alt"></i> Call us</button>
-                                    <button onclick="showLogin()" class="inline-flex items-center gap-2 bg-white text-slate-900 font-semibold px-7 py-3.5 rounded-full"><i class="fas fa-sign-in-alt"></i> Login</button>
-                                </div>
-                            </div>
-                        </div>
-                    </section>
-
-                    <footer class="relative text-center text-xs text-slate-400 py-6 border-t border-white/10">
-                        <span class="font-semibold text-slate-300">Nexgen Softwares</span> by Charvi Computers &middot; \u00a9 2026 &middot; Made for modern societies
-                    </footer>
-                </div>
-
-                <div id="login-modal" class="hidden fixed inset-0 z-50 items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm" onclick="if(event.target===this)hideLogin()">
-                    <div class="bg-white text-slate-800 p-7 rounded-2xl shadow-2xl w-full max-w-md slide-up relative">
-                        <button onclick="hideLogin()" aria-label="Close" class="absolute top-3 right-3 w-9 h-9 rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600"><i class="fas fa-times"></i></button>
+                <div class="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900">
+                    <div class="bg-white text-slate-800 p-7 rounded-2xl shadow-2xl w-full max-w-md slide-up">
                         <div class="text-center mb-6">
-                            <div class="w-14 h-14 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-3 text-xl shadow-inner"><i class="fas fa-building"></i></div>
-                            <h2 class="text-2xl font-bold">Welcome back</h2>
-                            <p class="text-slate-500 text-sm mt-1">Login to your SocietyConnect account</p>
+                            <img src="icon-192.png" alt="" class="w-16 h-16 rounded-2xl mx-auto mb-3 shadow">
+                            <h1 class="text-2xl font-bold">Society Connect</h1>
+                            <p class="text-slate-500 text-sm mt-1">Login to your society account</p>
                         </div>
                         <form onsubmit="handleLogin(event)" class="space-y-4">
-                            <div><label class="block text-sm font-medium text-slate-700 mb-1">Login ID</label>
+                            <div><label class="block text-sm font-medium text-slate-700 mb-1">Login ID / Email ID</label>
                                 <input type="text" name="email" required autocomplete="username" autocapitalize="none" class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"></div>
                             <div><label class="block text-sm font-medium text-slate-700 mb-1">Password</label>
                                 <input type="password" name="password" required autocomplete="current-password" class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"></div>
                             <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-lg transition-colors shadow-md">Sign In</button>
                         </form>
+                        <p class="text-xs text-slate-500 mt-4 leading-relaxed"><b>Residents &amp; committee:</b> use the Login ID given by your society.<br><b>Main member:</b> use your registered Email ID. <a href="../portal/?app=society" class="text-indigo-600 font-semibold">First time? Set your password here</a>.</p>
+                        ${sup ? `<p class="text-xs text-center mt-3"><a class="text-emerald-600 font-semibold" target="_blank" href="https://wa.me/${sup}"><i class="fab fa-whatsapp"></i> Need help? WhatsApp support</a></p>` : ''}
+                        <p class="text-[11px] text-center text-slate-400 mt-3">Powered by NexGen Softwares</p>
                     </div>
                 </div>
-
-                <button onclick="openModal('helpModal')" aria-label="Help" class="fixed bottom-6 right-6 z-40 bg-indigo-600 text-white rounded-full w-14 h-14 shadow-lg hover:bg-indigo-700 hover:scale-105 transition-all flex items-center justify-center">
-                    <i class="fas fa-headset text-2xl"></i>
-                </button>
                 <div id="modal-container"></div>
             `;
         }
@@ -1801,7 +1694,7 @@
                     }
 
                     let actionButtons = '';
-                    if (c.status === 'raised' && (currentUser.committeeRole === 'chairman' || currentUser.committeeRole === 'treasurer' || currentUser.role === 'developer')) {
+                    if (c.status === 'raised' && (currentUser.committeeRole === 'chairman' || currentUser.committeeRole === 'treasurer' || currentUser.role === 'developer' || currentUser.owner)) {
                         actionButtons = `<button onclick="confirmApproveComplaint('${c.id}')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm transition-colors mt-4"><i class="fas fa-check-circle mr-1"></i> Approve For Resolution</button>`;
                     } else if (c.status === 'approved') {
                         actionButtons = `<button onclick="openResolveComplaintModal('${c.id}')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm transition-colors mt-4"><i class="fas fa-tools mr-1"></i> Mark as Resolved</button>`;
@@ -2371,9 +2264,11 @@
                         </div>
                         <div><label class="block text-sm mb-1">Bank Details</label><textarea name="bank" class="w-full border rounded p-2 text-sm outline-none focus:border-indigo-500" rows="2">${soc.bankDetails || ''}</textarea></div>
                         <div><label class="block text-sm mb-1">Website URL</label><input type="text" name="websiteUrl" value="${soc.websiteUrl || ''}" class="w-full border rounded p-2 text-sm outline-none focus:border-indigo-500" placeholder="e.g. https://society.com"></div>
-                        ${currentUser && currentUser.role === 'developer' ? `
+                        ${isOwner() ? `
                         <div class="bg-amber-50 p-3 rounded-lg border border-amber-200">
-                            <label class="flex items-center justify-between text-sm mb-1 font-medium">Established / Start Month <span class="text-[10px] font-bold text-amber-700 bg-amber-100 border border-amber-200 rounded px-1.5 py-0.5"><i class="fas fa-lock mr-1"></i>Developer only</span></label>
+                            <label class="block text-sm mb-1 font-medium">Opening Balance of the society (₹)</label>
+                            <input type="number" step="0.01" name="initBal" value="${soc.initialBalance || 0}" class="w-full border border-amber-300 rounded p-2 text-sm outline-none focus:border-amber-500 bg-white mb-3">
+                            <label class="flex items-center justify-between text-sm mb-1 font-medium">Established / Start Month <span class="text-[10px] font-bold text-amber-700 bg-amber-100 border border-amber-200 rounded px-1.5 py-0.5"><i class="fas fa-lock mr-1"></i>Main member only</span></label>
                             <input type="month" name="estMonth" required max="${currentM}" value="${soc.establishedMonth || currentM}" pattern="[0-9]{4}-[0-9]{2}" placeholder="YYYY-MM" class="w-full border border-amber-300 rounded p-2 text-sm outline-none focus:border-amber-500 bg-white">
                             <p class="text-[11px] text-slate-500 mt-1">Sets which months are shown in Update Dues and Add Flat. Flats' existing dues are not changed.</p>
                         </div>` : ''}
@@ -4070,7 +3965,9 @@
 
             try {
                 let estChanged = '';
-                if (currentUser && currentUser.role === 'developer' && form.estMonth) {
+                if (isOwner() && form.initBal) soc.initialBalance = parseFloat(form.initBal.value || 0) || 0;
+                soc.setupDone = true;
+                if (isOwner() && form.estMonth) {
                     const est = String(form.estMonth.value || '').trim();
                     if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(est)) throw new Error('Established month must look like 2026-01');
                     if (est > getCurrentMonthStr()) throw new Error('Established month cannot be in the future');
@@ -4507,8 +4404,8 @@
         // =======================================================
 
         // ================= SUPABASE DATA LAYER =================
-        const SUPABASE_URL = 'https://rnuikghszqotecexhwlm.supabase.co';
-        const SUPABASE_KEY = 'sb_publishable_BuSon0kqzKJwgCQms1IwjQ_QDJA9iBl';
+        const SUPABASE_URL = 'https://nqqbduqqiwpaixmrweef.supabase.co';   // NexGen Softwares cloud
+        const SUPABASE_KEY = 'sb_publishable_eKTOE3ywBI9ye02QFVDmvg_231pdTTJ';
         const COLLS = ['users', 'societies', 'flats', 'payments', 'transactions', 'complaints', 'coupons', 'subPayments'];
         let sessionToken = null;
         let snapshot = {};      // "collection:id" -> JSON last known to be on the server
@@ -4538,7 +4435,7 @@
         // support number must be visible on the login screen, before anyone is signed in
         async function loadPublicSettings() {
             try {
-                const r = await sbRpc('app_public_settings', {});
+                const r = await sbRpc('sc_public_settings', {});
                 if (r && r.supportNumber) publicSettings = { supportNumber: r.supportNumber };
                 if (!sessionToken) { db.settings = { ...publicSettings }; return true; }
             } catch (e) {}
@@ -4547,7 +4444,7 @@
         const waDigits = n => { const d = String(n || '').replace(/\D/g, ''); return d.length === 10 ? '91' + d : d; };
 
         async function pullAll() {
-            const r = await sbRpc('app_pull', { p_token: sessionToken });
+            const r = await sbRpc('sc_pull', { p_token: sessionToken });
             snapshot = {};
             versions = (r && r._versions) || {};
             COLLS.forEach(c => {
@@ -4642,14 +4539,14 @@
             const keyBytes = b64 => { const s = b64.replace(/-/g, '+').replace(/_/g, '/'); const bin = atob(s + '==='.slice((s.length + 3) % 4)); const a = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i); return a; };
             const sameKey = (a, b) => { if (!a || !b) return false; const x = new Uint8Array(a); if (x.length !== b.length) return false; for (let i = 0; i < x.length; i++) if (x[i] !== b[i]) return false; return true; };
             async function subscribe() {
-                const key = await sbRpc('app_push_public_key', {});
+                const key = await sbRpc('sc_push_public_key', {});
                 if (!key) throw new Error('Notifications are not set up on the server yet');
                 const reg = await navigator.serviceWorker.ready;
                 let sub = await reg.pushManager.getSubscription();
                 const kb = keyBytes(key);
                 if (sub && sub.options && sub.options.applicationServerKey && !sameKey(sub.options.applicationServerKey, kb)) { await sub.unsubscribe(); sub = null; }
                 if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: kb });
-                await sbRpc('app_push_subscribe', { p_token: sessionToken, p_sub: sub.toJSON(), p_device: device });
+                await sbRpc('sc_push_subscribe', { p_token: sessionToken, p_sub: sub.toJSON(), p_device: device });
                 return sub;
             }
             async function enable() {                       // must start from a tap/click
@@ -4667,7 +4564,7 @@
             }
             async function disable() {
                 try { const reg = await navigator.serviceWorker.ready; const sub = await reg.pushManager.getSubscription();
-                      if (sub) { await sbRpc('app_push_unsubscribe', { p_token: sessionToken, p_endpoint: sub.endpoint }).catch(() => {}); await sub.unsubscribe(); } } catch (e) {}
+                      if (sub) { await sbRpc('sc_push_unsubscribe', { p_token: sessionToken, p_endpoint: sub.endpoint }).catch(() => {}); await sub.unsubscribe(); } } catch (e) {}
                 lsSet('sm_push_on', null); showToast('Notifications turned off on this device'); closeModal(); render();
             }
             async function sync() {                         // every app open: keep this device linked to whoever is logged in
@@ -4677,10 +4574,10 @@
             async function unlink() {                       // on logout
                 if (!supported() || !sessionToken) return;
                 try { const reg = await navigator.serviceWorker.ready; const sub = await reg.pushManager.getSubscription();
-                      if (sub) await sbRpc('app_push_unsubscribe', { p_token: sessionToken, p_endpoint: sub.endpoint }); } catch (e) {}
+                      if (sub) await sbRpc('sc_push_unsubscribe', { p_token: sessionToken, p_endpoint: sub.endpoint }); } catch (e) {}
             }
             async function test() {
-                try { const r = await sbRpc('app_push_test', { p_token: sessionToken });
+                try { const r = await sbRpc('sc_push_test', { p_token: sessionToken });
                       showToast(r && r.ok ? 'Test sent — it should appear in a few seconds' : 'Turn on notifications first', r && r.ok ? 'success' : 'error'); }
                 catch (e) { showToast('Could not send test: ' + e.message, 'error'); }
             }
@@ -4938,7 +4835,7 @@
             }
             if (!upserts.length && !deletes.length) return;
             try {
-                const res = await sbRpc('app_push', {
+                const res = await sbRpc('sc_push', {
                     p_token: sessionToken,
                     p_ops: {
                         // v = the server version this device started from; the server refuses the change if someone else changed it since
@@ -4991,9 +4888,11 @@
 
         window.onload = async () => {
             try {
-                const saved = JSON.parse(localStorage.getItem('sm_session') || 'null');
+                let saved = JSON.parse(localStorage.getItem('sm_session') || 'null');
+                const viaNexGen = await loginFromNexGen(saved);
+                if (viaNexGen) saved = viaNexGen;
                 if (saved && saved.token) {
-                    sessionToken = saved.token;
+                    sessionToken = saved.token; sessionOrigin = saved.origin || null;
                     await pullAll();
                     const u = db.users.find(x => x.id === saved.user_id);
                     const soc = u && u.societyId ? db.societies.find(x => x.id === u.societyId) : null;

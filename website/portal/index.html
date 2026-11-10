@@ -902,13 +902,23 @@ function wizStep1(page) {
 }
 
 /* ----- software selection (shared by wizard + "add / renew" for existing customer) ----- */
-function blankItem(sw, plan) {
-  return { software_id: sw.id, plan: plan || (sw.monthly_price > 0 || sw.yearly_price === 0 ? 'monthly' : 'yearly'), periods: 1, coupon_code: '', quote: null, start_date: '', payment_status: 'paid', payment_mode: 'UPI', payment_ref: '', app_login: '', notes: '' };
+// renewal of a per-flat software: start from the flats / maintenance / share % used last time
+function lastMeta(it, customerId) {
+  if (!it.meta || !customerId) return it;
+  const prev = (S.subs || S.subscriptions || []).filter(s => s.customer_id === customerId && s.software_id === it.software_id && s.meta).sort((a, b) => (a.created_at < b.created_at ? 1 : -1))[0];
+  if (prev) it.meta = { flats: prev.meta.flats || '', base: prev.meta.base || '', percent: prev.meta.percent || '' };
+  return it;
 }
+function blankItem(sw, plan) {
+  return { software_id: sw.id, plan: plan || (sw.monthly_price > 0 || sw.yearly_price === 0 ? 'monthly' : 'yearly'), periods: 1, coupon_code: '', quote: null, start_date: '', payment_status: 'paid', payment_mode: 'UPI', meta: sw.pricing_mode === 'per_flat' ? { flats: '', base: '', percent: '' } : null, payment_ref: '', app_login: '', notes: '' };
+}
+// Society Connect style pricing: our share of each flat's monthly maintenance
+const perFlat = sw => sw && sw.pricing_mode === 'per_flat';
+const flatUnit = it => { const m = it.meta || {}; return Math.round((+m.flats || 0) * (+m.base || 0) * (+m.percent || 0)) / 100; };   // ₹ per month for the whole society
 function itemPrice(it) {
   const sw = swById(it.software_id);
   if (it.quote && it.quote.ok) return it.quote;
-  const unit = it.plan === 'trial' ? 0 : it.plan === 'monthly' ? +sw.monthly_price : +sw.yearly_price;
+  const unit = it.plan === 'trial' ? 0 : perFlat(sw) ? flatUnit(it) * (it.plan === 'yearly' ? 12 : 1) : it.plan === 'monthly' ? +sw.monthly_price : +sw.yearly_price;
   const per = it.plan === 'trial' ? 1 : it.periods;
   return { list_price: unit * per, discount: 0, final_amount: unit * per, extra_days: 0 };
 }
@@ -940,10 +950,16 @@ function selectionUI(page, { customerId, title, subtitle, items, onBack, onSubmi
       <div class="item-head"><img class="app-ic" src="${esc(iconSrc(sw.icon))}" alt=""><div><b>${esc(sw.name)}</b><div class="small muted">${fmtD(dt.start)} → ${fmtD(dt.end)}</div></div>
         <div class="amt">${p.discount > 0 ? `<div class="small muted" style="text-decoration:line-through">${money(p.list_price)}</div>` : ''}<b>${money(p.final_amount)}</b></div></div>
       <div class="plans">
-        ${plan('monthly', 'Monthly', money(sw.monthly_price) + ' / month')}
-        ${plan('yearly', 'Yearly', money(sw.yearly_price) + ' / year')}
+        ${plan('monthly', perFlat(sw) ? 'Monthly (fixed)' : 'Monthly', (perFlat(sw) ? money(flatUnit(it)) : money(sw.monthly_price)) + ' / month')}
+        ${plan('yearly', perFlat(sw) ? 'Yearly (fixed)' : 'Yearly', (perFlat(sw) ? money(flatUnit(it) * 12) : money(sw.yearly_price)) + ' / year')}
         ${plan('trial', 'Trial', sw.trial_days + ' days free')}
       </div>
+      ${perFlat(sw) ? `<div class="grid3" style="background:var(--bg);border-radius:12px;padding:12px 12px 0;margin-bottom:12px">
+        <div class="field"><label>Number of flats <span class="req">*</span></label><input class="inp" type="number" min="1" data-m="flats" value="${esc(it.meta.flats)}" placeholder="e.g. 48"></div>
+        <div class="field"><label>Monthly maintenance per flat (₹)${it.plan !== 'trial' ? ' <span class="req">*</span>' : ''}</label><input class="inp" type="number" min="0" data-m="base" value="${esc(it.meta.base)}" placeholder="e.g. 1500"></div>
+        <div class="field"><label>Our share per flat (%)${it.plan !== 'trial' ? ' <span class="req">*</span>' : ''}</label><input class="inp" type="number" min="0" max="100" step="0.1" data-m="percent" value="${esc(it.meta.percent)}" placeholder="e.g. 2"></div>
+        <div class="small muted" style="grid-column:1/-1;margin:-4px 0 12px"><i class="fas fa-calculator"></i> ${+it.meta.base && +it.meta.percent ? `${money(Math.round(+it.meta.base * +it.meta.percent) / 100)} per flat per month × ${+it.meta.flats || 0} flats = <b>${money(flatUnit(it))} / month</b> · <b>${money(flatUnit(it) * 12)} / year</b>` : 'Charge = flats × maintenance × our share %. The customer is the society\'s main member; they add the committee and flats themselves.'}</div>
+      </div>` : ''}
       <div class="grid3">
         ${it.plan !== 'trial' ? `<div class="field"><label>Number of ${it.plan === 'monthly' ? 'months' : 'years'}</label><input class="inp" type="number" min="1" max="60" data-f="periods" value="${it.periods}"></div>` : ''}
         <div class="field"><label>Coupon code</label><div class="inp-group"><input class="inp mono" data-f="coupon_code" value="${esc(it.coupon_code)}" placeholder="Optional" style="text-transform:uppercase"><button type="button" class="btn ghost" data-act="apply">Apply</button></div>
@@ -985,14 +1001,14 @@ function selectionUI(page, { customerId, title, subtitle, items, onBack, onSubmi
   const requote = async (it, silent) => {
     const code = (it.coupon_code || '').trim();
     if (!code) { it.quote = null; return; }
-    try { it.quote = await run(sb.rpc('quote_subscription', { p_software_id: it.software_id, p_plan: it.plan, p_periods: it.plan === 'trial' ? 1 : it.periods, p_coupon: code })); }
+    try { it.quote = await run(sb.rpc('quote_subscription', { p_software_id: it.software_id, p_plan: it.plan, p_periods: it.plan === 'trial' ? 1 : it.periods, p_coupon: code, p_meta: it.meta || null })); }
     catch (e) { it.quote = { ok: false, error: errMsg(e) }; }
     if (!silent && it.quote && !it.quote.ok) toast(it.quote.error, 'err');
   };
   const bind = () => {
     $$('[data-pick]', page).forEach(el => el.onclick = () => {
       const id = el.dataset.pick;
-      if (items[id]) delete items[id]; else items[id] = blankItem(swById(id));
+      if (items[id]) delete items[id]; else items[id] = lastMeta(blankItem(swById(id)), customerId);
       draw();
     });
     $$('.item', page).forEach(card => {
@@ -1011,6 +1027,7 @@ function selectionUI(page, { customerId, title, subtitle, items, onBack, onSubmi
           if (f !== 'coupon_code' && f !== 'payment_ref' && f !== 'app_login' && f !== 'notes') draw();
         };
       });
+      $$('[data-m]', card).forEach(inp => inp.onchange = async () => { it.meta[inp.dataset.m] = inp.value; await requote(it, true); draw(); });
       const ap = $('[data-act=apply]', card);
       ap.onclick = async () => { ap.disabled = true; await requote(it); if (it.quote?.ok) toast('Coupon applied'); draw(); };
     });
@@ -1018,6 +1035,12 @@ function selectionUI(page, { customerId, title, subtitle, items, onBack, onSubmi
     if (onSkip) $('#selSkip').onclick = onSkip;
     $('#selGo').onclick = async () => {
       const sel = Object.values(items);
+      for (const it of sel) if (perFlat(swById(it.software_id))) {
+        const m = it.meta || {}, nm = swById(it.software_id).name;
+        if (!(+m.flats >= 1)) return toast(nm + ': enter the number of flats', 'err');
+        if (it.plan !== 'trial' && !(+m.base > 0)) return toast(nm + ': enter the monthly maintenance per flat', 'err');
+        if (it.plan !== 'trial' && !(+m.percent > 0 && +m.percent <= 100)) return toast(nm + ': enter our share % per flat', 'err');
+      }
       for (const it of sel) if ((it.coupon_code || '').trim() && !(it.quote && it.quote.ok)) {
         await requote(it, true);
         if (!it.quote.ok) { draw(); return toast(swById(it.software_id).name + ': ' + it.quote.error, 'err'); }
@@ -1105,7 +1128,7 @@ function viewAddSoftware(id, preselect) {
   const page = $('#page'), c = custById(id);
   if (!c) return page.innerHTML = `<div class="empty">Customer not found</div>`;
   const items = {};
-  if (preselect) { const sw = swById(preselect.software_id); if (sw) { items[sw.id] = blankItem(sw, preselect.plan === 'trial' ? 'monthly' : preselect.plan); items[sw.id].app_login = preselect.app_login || ''; } }
+  if (preselect) { const sw = swById(preselect.software_id); if (sw) { items[sw.id] = lastMeta(blankItem(sw, preselect.plan === 'trial' ? 'monthly' : preselect.plan), c.id); items[sw.id].app_login = preselect.app_login || ''; } }
   selectionUI(page, {
     customerId: c.id, title: preselect ? 'Renew software' : 'Add / renew software', subtitle: `For <b>${esc(c.company_name || c.name)}</b> (${esc(c.customer_code)}). Renewals start automatically after the current end date.`,
     items, submitText: 'Save', onBack: () => location.hash = '#/customer/' + c.id,
@@ -1362,7 +1385,7 @@ function viewSoftwares(page) {
     return `<div class="card sw-card" style="--c:${esc(sw.color)}${sw.is_active ? '' : ';opacity:.6'}">
       <div class="top"><img class="app-ic lg" src="${esc(iconSrc(sw.icon))}" alt=""><div style="min-width:0"><h4>${esc(sw.name)}</h4><div class="small muted">${esc(sw.tagline || '')}</div>
         <div class="small muted" style="margin-top:2px"><span class="mono">${esc(sw.code)}</span>${LIVE[sw.code] || sw.version ? ' · <b style="color:var(--ink)">v' + esc(LIVE[sw.code] || sw.version) + '</b>' + (LIVE[sw.code] ? ' <span title="Version live on the website">(live)</span>' : '') : ''}${sw.is_active ? '' : ' · <b style="color:var(--bad)">Inactive</b>'}</div></div></div>
-      <div class="prices"><div><b>${money(sw.monthly_price)}</b><span>per month</span></div><div><b>${money(sw.yearly_price)}</b><span>per year</span></div><div><b>${sw.trial_days} days</b><span>free trial</span></div></div>
+      <div class="prices">${perFlat(sw) ? `<div style="flex:2"><b>Per flat</b><span>flats × maintenance × share %</span></div>` : `<div><b>${money(sw.monthly_price)}</b><span>per month</span></div><div><b>${money(sw.yearly_price)}</b><span>per year</span></div>`}<div><b>${sw.trial_days} days</b><span>free trial</span></div></div>
       <div class="url">${url ? `<i class="fas fa-link"></i> <a href="${esc(url)}" target="_blank">${esc(url)}</a>` : '<i class="fas fa-triangle-exclamation" style="color:var(--warn)"></i> App URL not set'}</div>
       <div class="foot"><span class="small muted"><b style="color:var(--ink)">${liveCount(sw.id)}</b> active customers</span><button class="btn sm ghost" data-sw="${sw.id}"><i class="fas fa-pen"></i> Edit</button></div>
       ${url ? `<div style="display:flex;gap:8px"><a class="btn sm primary" style="flex:1" href="${esc(url)}" target="_blank" rel="noopener"><i class="fas fa-arrow-up-right-from-square"></i> Open</a>
@@ -1391,6 +1414,7 @@ function editSoftware(sw) {
         <div class="field"><label>Subdomain</label><input class="inp mono" name="subdomain" value="${esc(d.subdomain || '')}" placeholder="e.g. billing"><span class="hint">${S.settings.base_domain ? `→ https://&lt;subdomain&gt;.${esc(S.settings.base_domain)}` : 'Used once you set your own domain in Settings'}</span></div>
       </div>
       <div class="grid3">
+        <div class="field"><label>Pricing</label><select class="inp" name="pricing_mode"><option value="fixed" ${d.pricing_mode !== 'per_flat' ? 'selected' : ''}>Fixed monthly / yearly price</option><option value="per_flat" ${d.pricing_mode === 'per_flat' ? 'selected' : ''}>Per flat (society): flats × maintenance × share %</option></select></div>
         <div class="field"><label>Monthly price (₹)</label><input class="inp" type="number" min="0" step="1" name="monthly_price" value="${d.monthly_price}"></div>
         <div class="field"><label>Yearly price (₹)</label><input class="inp" type="number" min="0" step="1" name="yearly_price" value="${d.yearly_price}"></div>
         <div class="field"><label>Free trial (days)</label><input class="inp" type="number" min="0" step="1" name="trial_days" value="${d.trial_days}"></div>
@@ -1421,7 +1445,7 @@ function editSoftware(sw) {
     const f = Object.fromEntries(new FormData(form));
     const row = {
       name: f.name.trim(), tagline: f.tagline.trim() || null, icon: d.icon || null, color: f.color, app_url: f.app_url.trim() || null,
-      subdomain: f.subdomain.trim().toLowerCase() || null, version: f.version.trim() || null, monthly_price: +f.monthly_price || 0,
+      subdomain: f.subdomain.trim().toLowerCase() || null, version: f.version.trim() || null, pricing_mode: f.pricing_mode || 'fixed', monthly_price: +f.monthly_price || 0,
       yearly_price: +f.yearly_price || 0, trial_days: parseInt(f.trial_days) || 0, sort_order: parseInt(f.sort_order) || 0,
       features: f.features.split(',').map(x => x.trim()).filter(Boolean), is_active: !!form.is_active.checked
     };

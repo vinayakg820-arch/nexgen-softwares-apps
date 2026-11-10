@@ -24,6 +24,7 @@
   var KEY = 'sb_publishable_eKTOE3ywBI9ye02QFVDmvg_231pdTTJ';
   var STORE = 'nexgen-portal-auth', LIC = 'ngs-lic-' + APP;
   var GATE = APP !== 'portal';
+  var OWNLOGIN = GATE && ds.gate === 'off';   // the software has its own login page (e.g. residents of a society); its server checks the plan
   var SPLASH = ds.splash || '';        // the app's own opening screen stays visible while the licence is checked
   var VERSION = ds.version || '';
   var SHELL_UPDATER = ds.updater === 'shell';
@@ -452,6 +453,22 @@
     }).catch(function () { if (!unlocked) offline(); });
   }
 
+  if (OWNLOGIN) {
+    unlocked = true; startVersion();
+    freshSession().then(function (s) {
+      if (!s) return;
+      return fetch(SB + '/rest/v1/rpc/my_portal', {
+        method: 'POST', headers: { apikey: KEY, Authorization: 'Bearer ' + s.access_token, 'Content-Type': 'application/json' }, body: '{"p_login":false}'
+      }).then(function (r) { return r.ok ? r.json() : null; }).then(function (me) {
+        if (!me) return;
+        if (me.role === 'super_admin') showSwitch('admin');
+        else if (me.role === 'customer' && (me.apps || []).length > 1) showSwitch('apps');
+      });
+    }).catch(function () { });
+    window.NexGenShell = { app: APP, ownLogin: true, session: freshSession, toPanel: function () { location.href = ROOT + 'portal/?app=' + encodeURIComponent(APP); },
+      install: install, afterLogin: afterLogin, checkLatest: checkLatest, update: hardUpdate };
+    return;
+  }
   lock();
   check();
   // re-check when the app comes back to the screen (plan may have ended / been renewed)
@@ -459,5 +476,5 @@
   document.addEventListener('visibilitychange', function () {
     if (!document.hidden && Date.now() - lastCheck > 30 * 60 * 1000) { lastCheck = Date.now(); check(); }
   });
-  window.NexGenShell = { app: APP, toPanel: function () { location.href = ROOT + 'portal/'; }, logout: logoutAll, install: install, afterLogin: afterLogin, checkLatest: checkLatest, update: hardUpdate };
+  window.NexGenShell = { app: APP, session: freshSession, toPanel: function () { location.href = ROOT + 'portal/'; }, logout: logoutAll, install: install, afterLogin: afterLogin, checkLatest: checkLatest, update: hardUpdate };
 })();
