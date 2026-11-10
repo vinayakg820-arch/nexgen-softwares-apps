@@ -1,11 +1,11 @@
 {
-  "version": "2.2.1",
-  "released": "2026-11-02",
+  "version": "2.3.0",
+  "released": "2026-11-10",
   "force": false,
   "notes": [
-    "Fees: monthly fee is now checked month by month — a month shows Paid only when that month's fee is paid",
-    "Admin can mark any month Paid / Unpaid and edit or delete payments",
-    "Students see a “Please pay fees / कृपया फी भरा” reminder when they open the app",
-    "Android app: the always-showing “Notifications are on” message can be hidden — no new APK needed"
+    "Now on the NexGen Softwares cloud – every coaching class's data is separate and safe",
+    "Admin signs in with the NexGen Email ID (no activation code)",
+    "Teachers sign in with their Login ID, students with their mobile number",
+    "Your class name and logo inside the app"
   ]
 }
