@@ -6,7 +6,7 @@
 <title>NexGen Softwares</title>
 <meta name="theme-color" content="#1e1b4b">
 <link rel="manifest" href="manifest.json">
-<script src="nexgen-app.js" data-app="portal" data-version="1.6.0" data-name="NexGen Softwares" data-icon="icon-192.png" data-color="#4f46e5"></script>
+<script src="nexgen-app.js" data-app="portal" data-version="1.7.0" data-name="NexGen Softwares" data-icon="icon-192.png" data-color="#4f46e5"></script>
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
@@ -248,7 +248,7 @@ pre.code{background:#0f172a;color:#e2e8f0;padding:14px;border-radius:12px;overfl
 /* =====================================================================
    NexGen Softwares – Super Admin & Customer Portal
    ===================================================================== */
-const APP_VERSION = '1.6.0';
+const APP_VERSION = '1.7.0';
 const SUPABASE_URL = 'https://nqqbduqqiwpaixmrweef.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_eKTOE3ywBI9ye02QFVDmvg_231pdTTJ';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
@@ -444,7 +444,22 @@ function activatedPopup(c, subs, opts = {}) {
   return m;
 }
 
+let LIVE = {};
+async function loadLive() {
+  try { const r = await fetch('versions.json?t=' + Date.now(), { cache: 'no-store' }); if (r.ok) LIVE = await r.json(); } catch (_) { }
+  return LIVE;
+}
+function versionHtml(dark) {
+  const latest = LIVE.portal, old = latest && latest !== APP_VERSION;
+  const col = old ? '#ea580c' : latest ? '#16a34a' : '#94a3b8';
+  return `<span style="display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap"><i style="width:8px;height:8px;border-radius:50%;background:${col};display:inline-block"></i>
+    Version <b>v${APP_VERSION}</b> · ${old ? `<b style="color:${dark ? '#fdba74' : '#ea580c'}">v${esc(latest)} available</b> <button class="btn sm ${dark ? 'ghost' : 'primary'}" style="${dark ? 'color:#fff;border-color:rgba(255,255,255,.3);' : ''}padding:2px 8px" onclick="NexGenShell.update('${esc(latest)}')">Update</button>` : latest ? 'Up to date' : 'checking…'}</span>`;
+}
+function drawVersionLines() { $$('[data-verline]').forEach(el => el.innerHTML = versionHtml(el.dataset.verline === 'dark')); }
+document.addEventListener('visibilitychange', () => { if (!document.hidden && S.me) loadLive().then(drawVersionLines); });
+
 async function loadAll() {
+  loadLive().then(drawVersionLines);
   const [sw, cu, su, cp, st] = await Promise.all([
     run(sb.from('softwares').select('*').order('sort_order').order('name')),
     run(sb.from('customers').select(CUST_COLS).order('created_at', { ascending: false })),
@@ -476,6 +491,7 @@ async function enter(me) {
     renderShell();
     route();
     window.NexGenShell && NexGenShell.afterLogin({ suggest: false });
+  loadLive().then(drawVersionLines);
   } else if (me.role === 'customer' || me.role === 'member') {
     try { S.settings = await run(sb.from('settings').select('*').eq('id', 1).single()); } catch (_) { }
     renderCustomerPortal(me);
@@ -574,10 +590,12 @@ function renderCustomerPortal(me) {
       <div class="hello"><h2>Welcome, ${esc(c.name)}</h2><p>${esc(c.company_name || '')} · Login ID <b>${esc(c.code)}</b></p></div>
       ${apps.length ? `<div class="launch-grid">${apps.map(card).join('')}</div>`
       : `<div class="card empty"><i class="fas fa-box-open"></i>No software is active on your account yet.<br>Please contact NexGen Softwares.</div>`}
-      ${support ? `<p class="muted small" style="text-align:center;margin-top:26px">Need help? <a href="${esc(waLink(support, 'Hello NexGen Softwares, I need help. My ID: ' + c.code))}" target="_blank"><i class="fab fa-whatsapp"></i> WhatsApp support</a></p>` : ''}
+      <p class="muted small" style="text-align:center;margin-top:22px" data-verline="light">${versionHtml(false)}</p>
+      ${support ? `<p class="muted small" style="text-align:center;margin-top:10px">Need help? <a href="${esc(waLink(support, 'Hello NexGen Softwares, I need help. My ID: ' + c.code))}" target="_blank"><i class="fab fa-whatsapp"></i> WhatsApp support</a></p>` : ''}
     </div></div>`;
   $('#pLogout').onclick = () => { sessionStorage.removeItem('ngs-stay'); logout(); };
   window.NexGenShell && NexGenShell.afterLogin({ suggest: false });
+  loadLive().then(drawVersionLines);
 }
 
 /* =====================================================================
@@ -600,6 +618,7 @@ function renderShell() {
       <div class="brand"><img src="icon-192.png" alt=""><div><h1>NexGen Softwares</h1><small>Super Admin</small></div></div>
       <nav class="nav" id="nav">${NAV.map(([k, i, l], idx) => `${idx === 2 || idx === 6 ? '<div class="sep"></div>' : ''}<a href="#/${k}" data-k="${k}"><i class="fas ${i}"></i>${l}</a>`).join('')}</nav>
       <div class="side-foot"><div class="who">${esc(S.me.email)}</div>
+        <div data-verline="dark" style="margin-top:6px;color:#a5b4fc">${versionHtml(true)}</div>
         <button class="btn sm ghost" style="margin-top:8px;color:#c7d2fe;border-color:rgba(255,255,255,.15)" id="logoutBtn"><i class="fas fa-right-from-bracket"></i> Logout</button></div>
     </aside>
     <div class="drawer-mask" id="mask"></div>
@@ -653,7 +672,7 @@ function viewDashboard(page) {
   };
 
   page.innerHTML = `
-  <div class="page-head"><div><h2>Dashboard</h2><p>All your softwares and customers in one place</p></div>
+  <div class="page-head"><div><h2>Dashboard</h2><p>All your softwares and customers in one place</p><p class="small" data-verline="light" style="margin-top:6px">${versionHtml(false)}</p></div>
     <a class="btn primary" href="#/new"><i class="fas fa-user-plus"></i> Register customer</a></div>
   <div class="stats">
     ${stat('fa-users', '#eef2ff', '#4f46e5', S.customers.length, 'Customers', '#/customers')}
@@ -1229,7 +1248,7 @@ function viewSoftwares(page) {
     const url = appUrl(sw);
     return `<div class="card sw-card" style="--c:${esc(sw.color)}${sw.is_active ? '' : ';opacity:.6'}">
       <div class="top"><img class="app-ic lg" src="${esc(iconSrc(sw.icon))}" alt=""><div style="min-width:0"><h4>${esc(sw.name)}</h4><div class="small muted">${esc(sw.tagline || '')}</div>
-        <div class="small muted" style="margin-top:2px"><span class="mono">${esc(sw.code)}</span>${sw.version ? ' · v' + esc(sw.version) : ''}${sw.is_active ? '' : ' · <b style="color:var(--bad)">Inactive</b>'}</div></div></div>
+        <div class="small muted" style="margin-top:2px"><span class="mono">${esc(sw.code)}</span>${LIVE[sw.code] || sw.version ? ' · <b style="color:var(--ink)">v' + esc(LIVE[sw.code] || sw.version) + '</b>' + (LIVE[sw.code] ? ' <span title="Version live on the website">(live)</span>' : '') : ''}${sw.is_active ? '' : ' · <b style="color:var(--bad)">Inactive</b>'}</div></div></div>
       <div class="prices"><div><b>${money(sw.monthly_price)}</b><span>per month</span></div><div><b>${money(sw.yearly_price)}</b><span>per year</span></div><div><b>${sw.trial_days} days</b><span>free trial</span></div></div>
       <div class="url">${url ? `<i class="fas fa-link"></i> <a href="${esc(url)}" target="_blank">${esc(url)}</a>` : '<i class="fas fa-triangle-exclamation" style="color:var(--warn)"></i> App URL not set'}</div>
       <div class="foot"><span class="small muted"><b style="color:var(--ink)">${liveCount(sw.id)}</b> active customers</span><button class="btn sm ghost" data-sw="${sw.id}"><i class="fas fa-pen"></i> Edit</button></div>

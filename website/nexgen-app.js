@@ -75,6 +75,11 @@
     'padding:10px 10px 10px 14px;display:flex;gap:10px;align-items:center;font-size:13px;box-shadow:0 10px 30px rgba(0,0,0,.3);width:min(400px,calc(100vw - 24px))}' + '.bar span{flex:1}' +
     '.bar a{color:#fff;background:#25d366;border-radius:9px;padding:6px 10px;text-decoration:none;font-weight:700;white-space:nowrap}' +
     '.bar button{background:transparent;border:0;color:#94a3b8;font-size:18px;cursor:pointer}' +
+    '.ver{position:fixed;right:6px;bottom:calc(env(safe-area-inset-bottom,0px) + 6px);pointer-events:auto;display:flex;align-items:center;gap:5px;' +
+    'background:rgba(255,255,255,.92);color:#334155;border:1px solid #e2e8f0;border-radius:999px;padding:3px 9px 3px 7px;font-size:11px;font-weight:700;' +
+    'box-shadow:0 2px 8px rgba(15,23,42,.12);cursor:pointer;opacity:.85}' +
+    '.ver:hover{opacity:1}.ver i{width:8px;height:8px;border-radius:50%;background:#94a3b8;display:inline-block}' +
+    '.ver.ok i{background:#16a34a}.ver.old{background:#fff7ed;border-color:#fdba74;color:#9a3412;opacity:1}.ver.old i{background:#ea580c}' +
     '</style>';
   root.host ? (root.host.style.setProperty('--c', COLOR)) : host.style.setProperty('--c', COLOR);
   function mount() { if (!host.isConnected) document.documentElement.appendChild(host); }
@@ -151,6 +156,56 @@
   }
 
   /* ===================================================================
+     VERSION BADGE (bottom-right): this software's version + up to date or not
+     =================================================================== */
+  var verEl = null, verLatest = null;
+  function hardUpdate(nv) {
+    var go = function () { location.replace(location.pathname + '?v=' + encodeURIComponent(nv || Date.now()) + location.hash); };
+    var jobs = [];
+    try { if (navigator.serviceWorker && navigator.serviceWorker.getRegistration) jobs.push(navigator.serviceWorker.getRegistration().then(function (r) { return r && r.update(); })); } catch (e) { }
+    Promise.all(jobs).then(go, go);
+  }
+  function drawVersion() {
+    if (!VERSION) return;
+    mount();
+    if (!verEl) { verEl = el('<div class="ver" role="button"></div>'); verEl.onclick = versionSheet; }
+    var old = verLatest && verLatest !== VERSION;
+    verEl.className = 'ver' + (verLatest ? (old ? ' old' : ' ok') : '');
+    verEl.title = old ? 'Update available: v' + verLatest : (verLatest ? 'Up to date' : 'Version');
+    verEl.innerHTML = '<i></i>v' + esc(VERSION) + (old ? ' · Update' : '');
+  }
+  function versionSheet() {
+    mount();
+    var old = verLatest && verLatest !== VERSION;
+    var m = el('<div class="mask"><div class="sheet"><div class="row"><img alt="" src="' + esc(ICON) + '"><div><h3>' + esc(NAME) + '</h3>' +
+      '<p style="margin:0">Installed version <b>v' + esc(VERSION) + '</b></p></div></div>' +
+      (verLatest ? (old ? '<p style="color:#9a3412"><b>New version v' + esc(verLatest) + ' is available.</b></p><button class="btn pri" data-up>Update now</button>'
+                        : '<p style="color:#15803d"><b>&#10003; Up to date</b> – latest version is v' + esc(verLatest) + '.</p>')
+                 : '<p>Could not check for updates (no internet?).</p>') +
+      '<button class="btn gh" data-chk>Check again</button><button class="btn gh" data-close>Close</button></div></div>');
+    m.onclick = function (e) {
+      var tg = e.target;
+      if (tg === m || tg.hasAttribute('data-close')) m.remove();
+      else if (tg.hasAttribute('data-up')) { m.remove(); hardUpdate(verLatest); }
+      else if (tg.hasAttribute('data-chk')) { m.remove(); checkLatest(true); }
+    };
+  }
+  function checkLatest(openAfter) {
+    if (!VERSION) return;
+    fetch(ROOT + 'versions.json?t=' + Date.now(), { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (v) { verLatest = (v && v[APP]) || null; drawVersion(); if (openAfter) versionSheet(); })
+      .catch(function () { drawVersion(); if (openAfter) versionSheet(); });
+  }
+  var verStarted = false;
+  function startVersion() {
+    if (verStarted || !VERSION || ds.badge === 'off') return;
+    verStarted = true;
+    drawVersion(); checkLatest(false);
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) checkLatest(false); });
+  }
+
+  /* ===================================================================
      PER-APP UPDATE (only for apps with data-updater="shell")
      /versions.json lists the live version of every software; when this
      app's entry is newer than data-version, only THIS app shows the bar.
@@ -179,7 +234,7 @@
     document.addEventListener('visibilitychange', function () { if (!document.hidden) checkVersion(); });
   }
 
-  if (!GATE) { window.NexGenShell = { app: APP, install: install, afterLogin: afterLogin }; return; }
+  if (!GATE) { window.NexGenShell = { app: APP, install: install, afterLogin: afterLogin, update: hardUpdate }; return; }
 
   /* ===================================================================
      LICENCE GATE
@@ -192,6 +247,7 @@
   function lock() { document.documentElement.classList.add('ngs-lock'); }
   function unlock() {
     unlocked = true;
+    startVersion();
     document.documentElement.classList.remove('ngs-lock');
     if (gateEl) { gateEl.remove(); gateEl = null; }
   }
@@ -300,5 +356,5 @@
   document.addEventListener('visibilitychange', function () {
     if (!document.hidden && Date.now() - lastCheck > 30 * 60 * 1000) { lastCheck = Date.now(); check(); }
   });
-  window.NexGenShell = { app: APP, logout: logoutAll, install: install, afterLogin: afterLogin };
+  window.NexGenShell = { app: APP, logout: logoutAll, install: install, afterLogin: afterLogin, checkLatest: checkLatest, update: hardUpdate };
 })();
