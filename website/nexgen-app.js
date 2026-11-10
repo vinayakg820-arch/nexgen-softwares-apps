@@ -159,11 +159,50 @@
      VERSION BADGE (bottom-right): this software's version + up to date or not
      =================================================================== */
   var verEl = null, verLatest = null;
+  // Update = remove only THIS software's old copy (its service worker + caches), fetch fresh files, restart
   function hardUpdate(nv) {
+    mount();
+    var ov = el('<div class="gate"><div class="card"><img class="logo" alt="" src="' + esc(ICON) + '"><h2>Updating ' + esc(NAME) + '</h2>' +
+      '<p>' + (nv ? 'Installing v' + esc(nv) + '. ' : '') + 'The app will restart in a few seconds…</p><div class="spin"></div></div></div>');
+    try { sessionStorage.setItem('ngs-upd-' + APP, JSON.stringify({ from: VERSION, to: nv || '' })); } catch (e) { }
+    var scope = new URL('./', location.href).href, jobs = [];
+    try {
+      if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+        jobs.push(navigator.serviceWorker.getRegistrations().then(function (rs) {
+          return Promise.all(rs.filter(function (r) { return r.scope === scope; }).map(function (r) { return r.unregister(); }));
+        }));
+      }
+      if (window.caches) {
+        jobs.push(caches.keys().then(function (ks) {
+          return Promise.all(ks.map(function (k) {
+            return caches.open(k).then(function (c) { return c.keys(); }).then(function (reqs) {
+              var mine = reqs.length && reqs.every(function (r) { return r.url.indexOf(scope) === 0; });
+              return mine ? caches.delete(k) : null;
+            });
+          }));
+        }));
+      }
+      ['./', 'index.html', 'sw.js', 'manifest.json'].forEach(function (u) { jobs.push(fetch(u, { cache: 'reload' }).catch(function () { })); });
+    } catch (e) { }
     var go = function () { location.replace(location.pathname + '?v=' + encodeURIComponent(nv || Date.now()) + location.hash); };
-    var jobs = [];
-    try { if (navigator.serviceWorker && navigator.serviceWorker.getRegistration) jobs.push(navigator.serviceWorker.getRegistration().then(function (r) { return r && r.update(); })); } catch (e) { }
-    Promise.all(jobs).then(go, go);
+    Promise.all(jobs).then(function () { setTimeout(go, 700); }, go);
+    void ov;
+  }
+  // after the restart: tell the user whether it worked
+  function afterUpdateNotice() {
+    var info = null;
+    try { info = JSON.parse(sessionStorage.getItem('ngs-upd-' + APP) || 'null'); sessionStorage.removeItem('ngs-upd-' + APP); } catch (e) { }
+    if (!info) return;
+    var ok = !info.to || info.to === VERSION;
+    mount();
+    var m = el('<div class="mask"><div class="sheet" style="text-align:center"><img alt="" src="' + esc(ICON) + '" style="width:64px;height:64px;border-radius:16px">' +
+      '<h3 style="margin-top:10px">' + (ok ? '&#10003; Updated successfully' : 'Update not finished yet') + '</h3>' +
+      '<p>' + (ok ? esc(NAME) + ' is now on <b>v' + esc(VERSION) + '</b>.' : 'Still on v' + esc(VERSION) + '. The website may need a minute – please try again.') + '</p>' +
+      (ok ? '' : '<button class="btn pri" data-again>Try again</button>') + '<button class="btn gh" data-close>OK</button></div></div>');
+    m.onclick = function (e) {
+      if (e.target === m || e.target.hasAttribute('data-close')) m.remove();
+      else if (e.target.hasAttribute('data-again')) { m.remove(); hardUpdate(info.to); }
+    };
   }
   function drawVersion() {
     if (!VERSION) return;
@@ -201,7 +240,7 @@
   function startVersion() {
     if (verStarted || !VERSION || ds.badge === 'off') return;
     verStarted = true;
-    drawVersion(); checkLatest(false);
+    drawVersion(); checkLatest(false); afterUpdateNotice();
     document.addEventListener('visibilitychange', function () { if (!document.hidden) checkLatest(false); });
   }
 

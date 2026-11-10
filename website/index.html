@@ -6,7 +6,7 @@
 <title>NexGen Softwares</title>
 <meta name="theme-color" content="#1e1b4b">
 <link rel="manifest" href="manifest.json">
-<script src="nexgen-app.js" data-app="portal" data-version="1.7.0" data-name="NexGen Softwares" data-icon="icon-192.png" data-color="#4f46e5"></script>
+<script src="nexgen-app.js" data-app="portal" data-version="1.8.0" data-name="NexGen Softwares" data-icon="icon-192.png" data-color="#4f46e5"></script>
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
@@ -248,7 +248,7 @@ pre.code{background:#0f172a;color:#e2e8f0;padding:14px;border-radius:12px;overfl
 /* =====================================================================
    NexGen Softwares – Super Admin & Customer Portal
    ===================================================================== */
-const APP_VERSION = '1.7.0';
+const APP_VERSION = '1.8.0';
 const SUPABASE_URL = 'https://nqqbduqqiwpaixmrweef.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_eKTOE3ywBI9ye02QFVDmvg_231pdTTJ';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
@@ -453,7 +453,7 @@ function versionHtml(dark) {
   const latest = LIVE.portal, old = latest && latest !== APP_VERSION;
   const col = old ? '#ea580c' : latest ? '#16a34a' : '#94a3b8';
   return `<span style="display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap"><i style="width:8px;height:8px;border-radius:50%;background:${col};display:inline-block"></i>
-    Version <b>v${APP_VERSION}</b> · ${old ? `<b style="color:${dark ? '#fdba74' : '#ea580c'}">v${esc(latest)} available</b> <button class="btn sm ${dark ? 'ghost' : 'primary'}" style="${dark ? 'color:#fff;border-color:rgba(255,255,255,.3);' : ''}padding:2px 8px" onclick="NexGenShell.update('${esc(latest)}')">Update</button>` : latest ? 'Up to date' : 'checking…'}</span>`;
+    Version <b>v${APP_VERSION}</b> · ${old ? `<b style="color:${dark ? '#fdba74' : '#ea580c'}">v${esc(latest)} available</b> <button class="btn sm ${dark ? 'ghost' : 'primary'}" style="${dark ? 'color:#fff;border-color:rgba(255,255,255,.3);' : ''}padding:2px 8px" onclick="doUpdate('${esc(latest)}')">Update</button>` : latest ? 'Up to date' : 'checking…'}</span>`;
 }
 function drawVersionLines() { $$('[data-verline]').forEach(el => el.innerHTML = versionHtml(el.dataset.verline === 'dark')); }
 document.addEventListener('visibilitychange', () => { if (!document.hidden && S.me) loadLive().then(drawVersionLines); });
@@ -1514,29 +1514,69 @@ async function checkNexGenLicence(softwareCode, customerId) {
 /* =====================================================================
    UPDATES (upload new zip to EdgeOne → "Update now" bar)
    ===================================================================== */
-async function checkUpdate() {
+const UPD_LATER = 'ngs-portal-upd-later', UPD_DONE = 'ngs-portal-updated';
+async function checkUpdate(force) {
+  const v = await loadLive(); drawVersionLines();
+  const latest = v && v.portal;
+  if (!latest || latest === APP_VERSION) return;
+  if (!force && Date.now() < +(localStorage.getItem(UPD_LATER) || 0)) return;
+  if ($('.upd-modal')) return;
+  const m = openModal({
+    title: '&nbsp;',
+    body: `<div class="upd-modal" style="text-align:center;margin-top:-8px">
+        <div style="width:76px;height:76px;border-radius:50%;background:var(--brand-soft);color:var(--brand);display:grid;place-items:center;font-size:34px;margin:0 auto 12px"><i class="fas fa-circle-up"></i></div>
+        <h2 style="margin:0 0 6px;font-size:22px">New update available</h2>
+        <p class="muted" style="margin:0 0 14px">You are using <b>v${APP_VERSION}</b>. The new version is <b style="color:var(--brand)">v${esc(latest)}</b>.</p>
+        <p class="small muted" style="margin:0">The panel will restart in a few seconds. Nothing you saved is lost.</p></div>`,
+    foot: `<button class="btn ghost" id="updLater">Later</button><button class="btn primary" id="updNow"><i class="fas fa-rotate"></i> Update now</button>`
+  });
+  const head = $('.modal-head', m); if (head) { head.style.borderBottom = '0'; head.querySelector('h3').innerHTML = ''; }
+  $('#updLater', m).onclick = () => { localStorage.setItem(UPD_LATER, String(Date.now() + 60 * 60 * 1000)); m.close(); };
+  $('#updNow', m).onclick = () => { m.close(); doUpdate(latest); };
+}
+// clears only the portal's own old copy, refreshes it from the website and restarts
+async function doUpdate(latest) {
+  const ov = document.createElement('div');
+  ov.className = 'opening';
+  ov.innerHTML = `<div><img src="icon-192.png" alt=""><h2 style="margin:0 0 6px">Updating to v${esc(latest || '')}</h2><p style="color:#c7d2fe;margin:0 0 18px">Please wait, the panel will restart…</p><span class="spin" style="border-color:rgba(255,255,255,.25);border-top-color:#fff"></span></div>`;
+  document.body.appendChild(ov);
+  sessionStorage.setItem(UPD_DONE, JSON.stringify({ from: APP_VERSION, to: latest }));
+  localStorage.removeItem(UPD_LATER);
   try {
-    const r = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' });
-    if (!r.ok) return;
-    const { version } = await r.json();
-    if (version && version !== APP_VERSION && !$('.update-bar')) {
-      const bar = document.createElement('div');
-      bar.className = 'update-bar';
-      bar.innerHTML = `<span><i class="fas fa-circle-up"></i> New version ${esc(version)} available</span><button class="btn sm primary">Update now</button>`;
-      bar.querySelector('button').onclick = async () => {
-        try { const regs = await navigator.serviceWorker?.getRegistrations(); for (const reg of regs || []) await reg.update(); const ks = await caches.keys(); await Promise.all(ks.map(k => caches.delete(k))); } catch (_) { }
-        location.reload();
-      };
-      document.body.appendChild(bar);
-    }
+    const root = new URL('./', location.href);
+    const regs = (await navigator.serviceWorker?.getRegistrations()) || [];
+    for (const r of regs) if (new URL(r.scope).pathname === root.pathname) await r.unregister();     // portal's own worker only
+    for (const k of await caches.keys()) if (k.startsWith('nexgen-portal-')) await caches.delete(k);
+    await Promise.all(['./', 'index.html', 'nexgen-app.js', 'sw.js', 'manifest.json', 'versions.json']
+      .map(u => fetch(u, { cache: 'reload' }).catch(() => { })));
   } catch (_) { }
+  setTimeout(() => location.replace(location.pathname + '?updated=' + encodeURIComponent(latest || Date.now()) + location.hash), 900);
+}
+// after the restart: confirm it worked
+function afterUpdateCheck() {
+  let info = null; try { info = JSON.parse(sessionStorage.getItem(UPD_DONE) || 'null'); } catch (_) { }
+  if (/[?&]updated=/.test(location.search)) history.replaceState(null, '', location.pathname + location.hash);
+  if (!info) return false;
+  sessionStorage.removeItem(UPD_DONE);
+  const ok = !info.to || info.to === APP_VERSION;
+  const m = openModal({
+    title: '&nbsp;',
+    body: `<div style="text-align:center;margin-top:-8px">
+      <div style="width:76px;height:76px;border-radius:50%;background:${ok ? 'var(--ok-soft)' : 'var(--warn-soft)'};color:${ok ? 'var(--ok)' : 'var(--warn)'};display:grid;place-items:center;font-size:34px;margin:0 auto 12px"><i class="fas ${ok ? 'fa-check' : 'fa-hourglass-half'}"></i></div>
+      <h2 style="margin:0 0 6px;font-size:22px">${ok ? 'Updated successfully' : 'Update not finished yet'}</h2>
+      <p class="muted" style="margin:0">${ok ? `NexGen Super Admin is now on <b>v${APP_VERSION}</b>.` : `Still on v${APP_VERSION}. The website may need a minute to show the new files – please try again.`}</p></div>`,
+    foot: ok ? `<button class="btn primary" data-close>OK</button>` : `<button class="btn ghost" data-close>Later</button><button class="btn primary" id="updAgain">Try again</button>`
+  });
+  const head = $('.modal-head', m); if (head) { head.style.borderBottom = '0'; head.querySelector('h3').innerHTML = ''; }
+  if (!ok) $('#updAgain', m).onclick = () => { m.close(); doUpdate(info.to); };
+  return true;
 }
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => { });
-setInterval(checkUpdate, 5 * 60 * 1000);
-document.addEventListener('visibilitychange', () => { if (!document.hidden) checkUpdate(); });
+setInterval(() => checkUpdate(false), 5 * 60 * 1000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) checkUpdate(false); });
 
 sb.auth.onAuthStateChange(ev => { if (ev === 'SIGNED_OUT' && S.me) { S.me = null; renderLogin(); } });
-boot().then(checkUpdate);
+boot().then(() => { if (!afterUpdateCheck()) checkUpdate(false); else loadLive().then(drawVersionLines); });
 </script>
 </body>
 </html>

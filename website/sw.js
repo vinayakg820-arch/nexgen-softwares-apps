@@ -1,6 +1,6 @@
 /* NexGen portal service worker (root). It only handles the portal's own files:
    every software folder (/billing/, /coaching/ …) keeps its own service worker. */
-const CACHE = 'nexgen-portal-v1.7.0';
+const CACHE = 'nexgen-portal-v1.8.0';
 const SHELL = ['./', 'index.html', 'manifest.json', 'icon-192.png', 'nexgen-app.js'];
 self.addEventListener('install', e => { self.skipWaiting(); e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).catch(() => {})); });
 self.addEventListener('activate', e => e.waitUntil(
