@@ -1,0 +1,81 @@
+{
+  "note": "Release history shown in NexGen Super Admin → Updates. Newest first. Add one entry for every website ZIP.",
+  "updates": [
+    {
+      "site": "2.2.1", "date": "2026-11-11",
+      "title": "Update notices and update history in Super Admin",
+      "apps": [
+        { "code": "portal", "name": "NexGen Super Admin", "from": "2.1.1", "to": "2.2.0",
+          "notes": ["A notice appears whenever a new website ZIP is uploaded: which software changed and to which version", "New Updates page with the full update history", "Website (ZIP) version shown next to the panel version"] }
+      ],
+      "how": "Super Admin shows “New update available” → Update now → the panel restarts."
+    },
+    {
+      "site": "2.2.0", "date": "2026-11-10",
+      "title": "Mauli Coaching Classes on the NexGen cloud",
+      "apps": [
+        { "code": "coaching", "name": "Mauli Coaching Classes", "from": "2.2.1", "to": "2.3.0",
+          "notes": ["Every coaching class's data is separate and safe (new server)", "Admin signs in first with the NexGen Email ID – no activation code", "Teachers sign in with their Login ID, students with their mobile number", "Class name and logo inside the app"] }
+      ],
+      "how": "Inside the Coaching app: “New update available” → Update now. No new APK needed."
+    },
+    {
+      "site": "2.1.1", "date": "2026-11-10",
+      "title": "New NexGen Softwares logo",
+      "apps": [
+        { "code": "portal", "name": "NexGen Super Admin", "from": "2.1.0", "to": "2.1.1",
+          "notes": ["New lavender NexGen Softwares logo in the panel, login page and app icon"] }
+      ],
+      "apk": ["NexGen Softwares APK 1.2.1 (new icon) – installs over the old APK"],
+      "how": "Super Admin update popup → restart. Phone: install the new NexGen Softwares APK once (no uninstall)."
+    },
+    {
+      "site": "2.1.0", "date": "2026-11-10",
+      "title": "Society Connect on the NexGen cloud + per-flat plans",
+      "apps": [
+        { "code": "society", "name": "Society Connect", "from": "2.8.1", "to": "2.9.0",
+          "notes": ["Website/hero page removed – opens straight on the login page", "In-app admin panel removed; the customer is the society's Main Member", "Every society's data is separate (new server)"] },
+        { "code": "portal", "name": "NexGen Super Admin", "from": "2.1.0", "to": "2.1.0",
+          "notes": ["Society Connect plans priced per flat: flats × maintenance × share %, monthly or yearly"] }
+      ],
+      "how": "Inside Society Connect: update popup → Update. Super Admin change is live after the page reloads."
+    },
+    {
+      "site": "2.0.5", "date": "2026-11-10",
+      "title": "Email login, first-time password, Super Admin switch",
+      "apps": [
+        { "code": "portal", "name": "NexGen Super Admin", "from": "2.0.0", "to": "2.1.0",
+          "notes": ["Customers log in with their Email ID and set their own password the first time", "Password status and “Let customer set new password” on the customer page"] },
+        { "code": "all", "name": "All softwares", "notes": ["“⇄ Super Admin” / “⇄ My softwares” switch button in every software"] }
+      ],
+      "how": "Super Admin update popup → restart. Softwares pick up the switch button on their next open."
+    },
+    {
+      "site": "2.0.4", "date": "2026-11-10",
+      "title": "LeadMaster on the NexGen cloud",
+      "apps": [
+        { "code": "leadmaster", "name": "LeadMaster", "from": "1.0.19", "to": "1.1.0",
+          "notes": ["Every shop's leads, products and users are separate (new server)", "Login on the main NexGen link; shop name and logo inside the app"] },
+        { "code": "all", "name": "All softwares", "notes": ["Install button opens the browser's install window directly"] }
+      ],
+      "how": "Inside LeadMaster: “Update Now” popup."
+    },
+    {
+      "site": "2.0.3", "date": "2026-11-10",
+      "title": "Each software installs as its own app",
+      "apps": [
+        { "code": "all", "name": "All softwares", "notes": ["Super Admin, Portal, Shubh Laxmi, Coaching, LeadMaster and Society each have their own app id, so they install separately"] }
+      ],
+      "how": "Automatic. Remove the old “NexGen Softwares” app once (chrome://apps) if it was installed before."
+    },
+    {
+      "site": "2.0.2", "date": "2026-11-10",
+      "title": "Shubh Laxmi Billing Software",
+      "apps": [
+        { "code": "billing", "name": "Shubh Laxmi Billing Software", "to": "1.9.2",
+          "notes": ["New name and traditional logo", "Vahi-opening animation on every start", "Customer's name and logo on invoices", "Data separate for every customer"] }
+      ],
+      "how": "Inside Shubh Laxmi: update popup → Update."
+    }
+  ]
+}
