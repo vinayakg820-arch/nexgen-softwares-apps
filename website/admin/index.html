@@ -6,9 +6,9 @@
 <title>NexGen Softwares</title>
 <meta name="theme-color" content="#1e1b4b">
 <link rel="manifest" href="manifest.json?v=203">
-<script src="../nexgen-app.js" data-app="portal" data-version="2.1.0" data-name="NexGen Softwares" data-icon="../icon-192.png" data-color="#4f46e5"></script>
-<link rel="icon" href="../icon-192.png">
-<link rel="apple-touch-icon" href="../icon-192.png">
+<script src="../nexgen-app.js" data-app="portal" data-version="2.1.1" data-name="NexGen Softwares" data-icon="../icon-192.png?v=211" data-color="#4f46e5"></script>
+<link rel="icon" href="../logo/mark.svg" type="image/svg+xml"><link rel="icon" href="../favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -30,7 +30,8 @@ button,input,select,textarea{font:inherit;color:inherit}
 .login-wrap{min-height:100%;display:grid;place-items:center;padding:24px;background:radial-gradient(1200px 600px at 10% -10%,#c7d2fe 0,transparent 60%),radial-gradient(900px 500px at 110% 110%,#ddd6fe 0,transparent 60%),var(--bg)}
 .login-card{width:100%;max-width:400px;background:#fff;border-radius:20px;box-shadow:0 20px 60px rgba(30,27,75,.15);padding:32px 28px}
 .brand{display:flex;align-items:center;gap:12px}
-.brand img{width:46px;height:46px;border-radius:12px}
+.brand>img{width:46px;height:46px;border-radius:12px}
+.brand h1 img.wm{height:19px;width:auto;display:block;margin:0 0 3px}
 .brand h1{font-size:20px;margin:0;letter-spacing:-.2px}
 .brand small{color:var(--muted);font-size:12.5px}
 .login-card h2{font-size:17px;margin:26px 0 4px}
@@ -71,7 +72,8 @@ textarea.inp{min-height:70px;resize:vertical}
 .shell{display:flex;min-height:100%}
 .side{width:240px;flex:0 0 240px;background:var(--side);color:#c7d2fe;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
 .side .brand{padding:18px 18px 14px;color:#fff}
-.side .brand img{width:38px;height:38px;border-radius:10px}
+.side .brand>img{width:34px;height:34px;border-radius:9px}
+.side .brand{gap:10px}.side .brand h1 img.wm{height:12.5px;margin:0 0 3px}
 .side .brand h1{font-size:15.5px}
 .side .brand small{color:#a5b4fc}
 .nav{padding:8px 10px;flex:1;overflow:auto}
@@ -248,7 +250,7 @@ pre.code{background:#0f172a;color:#e2e8f0;padding:14px;border-radius:12px;overfl
 /* =====================================================================
    NexGen Softwares – Super Admin & Customer Portal
    ===================================================================== */
-const APP_VERSION = '2.1.0';
+const APP_VERSION = '2.1.1';
 const AREA = /\/admin\//.test(location.pathname) ? 'admin' : 'portal';
 const SUPABASE_URL = 'https://nqqbduqqiwpaixmrweef.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_eKTOE3ywBI9ye02QFVDmvg_231pdTTJ';
@@ -520,7 +522,7 @@ async function logout() {
 
 function renderLogin(error, keepId) {
   document.title = 'Login – NexGen Softwares';
-  const head = `<div class="brand"><img src="../icon-192.png" alt=""><div><h1>NexGen Softwares</h1><small>${AREA === 'admin' ? 'Super Admin' : 'Software Portal'}</small></div></div>`;
+  const head = `<div class="brand"><img src="../logo/mark.svg" alt=""><div><h1><img class="wm" src="../logo/wordmark.svg" alt="NexGen Softwares"></h1><small>${AREA === 'admin' ? 'Super Admin' : 'Software Portal'}</small></div></div>`;
   const busy = (btn, txt) => { btn.disabled = true; btn.innerHTML = `<span class="spin" style="width:16px;height:16px;border-width:2px;border-color:rgba(255,255,255,.4);border-top-color:#fff"></span> ${txt}`; };
   const isEmail = v => /^\S+@\S+\.\S+$/.test(v.trim());
 
@@ -670,7 +672,7 @@ function renderCustomerPortal(me) {
   };
 
   $('#app').innerHTML = `<div class="portal">
-    <div class="portal-head"><div class="brand" style="flex:1"><img src="${esc(c.has_logo ? logoUrl(c) : '../icon-192.png')}" alt="" style="background:#fff;object-fit:contain"><div><h1>${esc(c.company_name || 'NexGen Softwares')}</h1><small>Powered by NexGen Softwares</small></div></div>
+    <div class="portal-head"><div class="brand" style="flex:1"><img src="${esc(c.has_logo ? logoUrl(c) : '../logo/mark.svg')}" alt="" style="background:#fff;object-fit:contain"><div><h1>${esc(c.company_name || 'NexGen Softwares')}</h1><small>Powered by NexGen Softwares</small></div></div>
       <button class="btn ghost" style="color:#fff;border-color:rgba(255,255,255,.25)" id="pLogout"><i class="fas fa-right-from-bracket"></i> Logout</button></div>
     <div class="portal-body">
       <div class="hello"><h2>Welcome, ${esc(c.name)}</h2><p>${esc(c.company_name || '')} · ID <b>${esc(c.code)}</b></p></div>
@@ -701,7 +703,7 @@ function renderShell() {
   document.title = 'Super Admin – NexGen Softwares';
   $('#app').innerHTML = `<div class="shell">
     <aside class="side" id="side">
-      <div class="brand"><img src="../icon-192.png" alt=""><div><h1>NexGen Softwares</h1><small>Super Admin</small></div></div>
+      <div class="brand"><img src="../logo/mark.svg" alt=""><div><h1><img class="wm" src="../logo/wordmark-light.svg" alt="NexGen Softwares"></h1><small>Super Admin</small></div></div>
       <nav class="nav" id="nav">${NAV.map(([k, i, l], idx) => `${idx === 2 || idx === 6 ? '<div class="sep"></div>' : ''}<a href="#/${k}" data-k="${k}"><i class="fas ${i}"></i>${l}</a>`).join('')}</nav>
       <div class="side-foot"><div class="who">${esc(S.me.email)}</div>
         <div data-verline="dark" style="margin-top:6px;color:#a5b4fc">${versionHtml(true)}</div>
@@ -1677,7 +1679,7 @@ async function checkUpdate(force) {
 async function doUpdate(latest) {
   const ov = document.createElement('div');
   ov.className = 'opening';
-  ov.innerHTML = `<div><img src="../icon-192.png" alt=""><h2 style="margin:0 0 6px">Updating to v${esc(latest || '')}</h2><p style="color:#c7d2fe;margin:0 0 18px">Please wait, the panel will restart…</p><span class="spin" style="border-color:rgba(255,255,255,.25);border-top-color:#fff"></span></div>`;
+  ov.innerHTML = `<div><img src="../logo/mark.svg" alt=""><h2 style="margin:0 0 6px">Updating to v${esc(latest || '')}</h2><p style="color:#c7d2fe;margin:0 0 18px">Please wait, the panel will restart…</p><span class="spin" style="border-color:rgba(255,255,255,.25);border-top-color:#fff"></span></div>`;
   document.body.appendChild(ov);
   sessionStorage.setItem(UPD_DONE, JSON.stringify({ from: APP_VERSION, to: latest }));
   localStorage.removeItem(UPD_LATER);
