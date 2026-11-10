@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"><script src="../nexgen-app.js" data-app="leadmaster" data-version="1.0.19" data-name="LeadMaster" data-icon="icons/icon-192.png" data-color="#0f172a"></script>
+  <meta charset="UTF-8"><script src="../nexgen-app.js" data-app="leadmaster" data-version="1.1.0" data-name="LeadMaster" data-icon="icons/icon-192.png" data-color="#0f172a"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>LeadMaster - Lead Management System</title>
   <link rel="manifest" href="manifest.webmanifest?v=203">
@@ -197,7 +197,7 @@
       { id: 3, name: 'Amit Patel', phone: '+91 7654321098', enquiryDate: '2023-10-27', category: 'Organic WhatsApp', product: 'Consulting', reference: 'Justdial', callStatus: 'Made Call', expectedBuyDate: '', visitedStatus: 'Not Visited', buyingConfirmation: 'No', buyingWhen: '', notBuyingReason: 'Price too high', conversionStatus: 'Not Converted', assignedTo: null },
     ];
     // Filled in by the GitHub build (e.g. 1.0.4); shows 'dev' in the repository copy
-    const APP_VERSION = '1.0.19'.indexOf('__') === 0 ? 'dev' : '1.0.19';
+    const APP_VERSION = '1.1.0'.indexOf('__') === 0 ? 'dev' : '1.1.0';
     const cmpVer = (a, b) => {
       const pa = String(a).split('.').map(n => parseInt(n, 10) || 0), pb = String(b).split('.').map(n => parseInt(n, 10) || 0);
       for (let i = 0; i < Math.max(pa.length, pb.length); i++) { const d = (pa[i] || 0) - (pb[i] || 0); if (d) return d > 0 ? 1 : -1; }
@@ -207,11 +207,11 @@
     const lsSet = (k, v) => { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} };
     const GITHUB_REPO = 'vinayakg820-arch/Lead-Management-';
     // Phones check this website (EdgeOne) for a newer version: upload a new ZIP there → "Update Now" pop-up in the app
-    const DEFAULT_SITE_URL = 'https://leadmanagementcharvicomputers.edgeone.dev/';
+    const DEFAULT_SITE_URL = 'https://nexgensoftwares.edgeone.dev/leadmaster/';
     // Lowest Android app (native) version this web code needs; raise it together with NATIVE_VERSION in MainActivity.java
     const MIN_NATIVE_VERSION = 6;
     // Filled in by the GitHub build with the commit message; shown as "What's new"
-    const RELEASE_NOTES_RAW = "Lead card buttons नीट: Call आणि WhatsApp मोठे, overlap नाही\n\n- Phone वर Call आणि WhatsApp वरच्या ओळीत दोन मोठे buttons\n- ✓ / pending आकडा WhatsApp शब्दाशेजारी, Call वर येत नाही\n- View, Edit, Assign, Delete खालच्या ओळीत नावासह";
+    const RELEASE_NOTES_RAW = "LeadMaster आता NexGen Softwares cloud वर\n\n- एकाच NexGen link वरून login; प्रत्येक shop चा data फक्त त्याच्याच login ला दिसतो\n- तुमच्या shop चं नाव आणि logo app मध्ये\n- Users (staff) NexGen link वर त्यांच्या Login ID ने login करतात";
     const RELEASE_NOTES = RELEASE_NOTES_RAW.indexOf('__REL') === 0 ? '' : RELEASE_NOTES_RAW;
     const notesFromHtml = (html) => {
       const m = html.match(/const RELEASE_NOTES_RAW = ("(?:[^"\\]|\\.)*")/);
@@ -271,7 +271,14 @@
       );
     };
     // ---------- Supabase ----------
-    const sb = supabase.createClient('https://cssswtyzfmfoijcjgxpe.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNzc3N3dHl6Zm1mb2lqY2pneHBlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3MzI1MjUsImV4cCI6MjEwODMwODUyNX0.Em-aabrMfICAsYMfGf719hN0eXMsxt2CGcAkfi4Fe98');
+    // NexGen Softwares cloud: one login on the main link, every shop's data locked to its own login (row level security)
+    const sb = supabase.createClient('https://nqqbduqqiwpaixmrweef.supabase.co', 'sb_publishable_eKTOE3ywBI9ye02QFVDmvg_231pdTTJ',
+      { auth: { persistSession: true, autoRefreshToken: true, storage: window.localStorage, storageKey: 'nexgen-portal-auth' } });
+    const TBL = { profiles: 'lm_profiles', leads: 'lm_leads', tasks: 'lm_tasks', settings: 'lm_settings', products: 'lm_products', lead_sends: 'lm_sends', app_clients: 'lm_clients' };
+    const ON = { leads: 'tenant,id', tasks: 'tenant,id', settings: 'tenant,key', products: 'tenant,id', lead_sends: 'tenant,lead_id,item', app_clients: 'auth_id,platform' };
+    const IMG_BUCKET = 'leadmaster-images';
+    let TENANT = '';   // this shop's id, filled after login (photos are stored in the shop's own folder)
+    const imgPath = (rest) => TENANT + '/' + rest;
     const toEmail = (id) => { const v = String(id).trim().toLowerCase(); return v.includes('@') ? v : v + '@leadmaster.app'; };
     const waNum = (p) => { const d = String(p || '').replace(/\D/g, ''); return d.length === 10 ? '91' + d : d; };
     // ---------- Product catalogue ----------
@@ -511,8 +518,8 @@
     const rowOf = (table, o) => table === 'settings' ? o : ({ id: String(o.id), assigned_to: o.assignedTo ?? null, data: o });
     const profileToUser = (p) => ({ ...p.data, id: p.id, role: p.role, authId: p.auth_id });
     const adminCall = async (body) => {
-      const { data, error } = await sb.functions.invoke('admin-users', { body });
-      if (error) { let m = error.message; try { m = (await error.context.json()).error || m; } catch (e) {} throw new Error(m); }
+      const { data, error } = await sb.rpc('lm_manage_user', { p: body });
+      if (error) throw new Error(error.message);
       if (data && data.error) throw new Error(data.error);
     };
     const COLORS = ['#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
@@ -1515,7 +1522,8 @@
                 </div>
                 <Input label="Address" name="address" value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} placeholder="Location / HQ" />
                 <div className="pt-4 border-t border-slate-100">
-                   <Input label="Login ID (Email/Username)" name="loginId" value={formData.loginId} onChange={(e) => setFormData({...formData, loginId: e.target.value})} required placeholder="e.g. rahul@company.com" />
+                   <Input label="Login ID (Email/Username)" name="loginId" value={formData.loginId} onChange={(e) => setFormData({...formData, loginId: e.target.value})} required placeholder="e.g. rahul.shop" />
+                   <p className="text-xs text-slate-500 mt-1">The user logs in at <b>nexgensoftwares.edgeone.dev</b> with this Login ID and password.</p>
                 </div>
                 <div>
                   <div className="flex justify-between items-end mb-1.5">
@@ -1539,7 +1547,7 @@
       const [isModalOpen, setIsModalOpen] = useState(false);
       const [editingUser, setEditingUser] = useState(null);
       const [clients, setClients] = useState([]);
-      useEffect(() => { sb.from('app_clients').select('*').then(({ data }) => { if (data) setClients(data); }); }, []);
+      useEffect(() => { sb.from(TBL.app_clients).select('*').then(({ data }) => { if (data) setClients(data); }); }, []);
       const latestVersion = clients.reduce((m, c) => cmpVer(c.version, m) > 0 ? c.version : m, '0');
       const ago = (t) => { const m = Math.round((Date.now() - new Date(t).getTime()) / 60000); return m < 1 ? 'now' : m < 60 ? m + 'm ago' : m < 1440 ? Math.round(m / 60) + 'h ago' : Math.round(m / 1440) + 'd ago'; };
 
@@ -2237,7 +2245,7 @@
       const installApp = async () => { if (!installEvt) return; installEvt.prompt(); try { await installEvt.userChoice; } catch (e) {} setInstallEvt(null); };
       const [sends, setSends] = useState({});
       const loadSends = async () => {
-        const { data, error } = await sb.from('lead_sends').select('lead_id,item,sent_at');
+        const { data, error } = await sb.from(TBL.lead_sends).select('lead_id,item,sent_at');
         if (error || !data) return;
         const map = {};
         data.forEach(r => { (map[r.lead_id] = map[r.lead_id] || {})[r.item] = r.sent_at; });
@@ -2248,7 +2256,7 @@
           const { leadId, item } = e.detail;
           const now = new Date().toISOString();
           setSends(prev => ({ ...prev, [leadId]: { ...(prev[leadId] || {}), [item]: now } }));
-          await sb.from('lead_sends').upsert({ lead_id: leadId, item, sent_at: now, sent_by: meRef.current ? meRef.current.id : null });
+          await sb.from(TBL.lead_sends).upsert({ lead_id: leadId, item, sent_at: now, sent_by: meRef.current ? meRef.current.id : null }, { onConflict: ON.lead_sends });
         };
         window.addEventListener('lm-wa-sent', h);
         return () => window.removeEventListener('lm-wa-sent', h);
@@ -2295,20 +2303,23 @@
       const [toast, setToast] = useState({ message: '', type: '', isExiting: false });
 
       const loadProducts = async () => {
-        const { data, error } = await sb.from('products').select('*');
+        const { data, error } = await sb.from(TBL.products).select('*');
         if (!error && data) setProducts(sortProducts(data.map(normalizeProduct)));
       };
 
       // ---- Load everything from Supabase ----
       const loadAll = async (authUser, keepView = false) => {
         const [p, l, t, s] = await Promise.all([
-          sb.from('profiles').select('*'), sb.from('leads').select('*'),
-          sb.from('tasks').select('*'), sb.from('settings').select('*')
+          sb.from(TBL.profiles).select('*'), sb.from(TBL.leads).select('*'),
+          sb.from(TBL.tasks).select('*'), sb.from(TBL.settings).select('*')
         ]);
         const err = p.error || l.error || t.error || s.error;
         if (err) { showToast('Could not load data: ' + err.message, 'error'); return false; }
         const me = p.data.find(x => x.auth_id === authUser.id);
-        if (!me) { showToast('No profile found for this account.', 'error'); await sb.auth.signOut(); return false; }
+        if (!me) { setNoAccess(true); return false; }
+        if (TENANT && TENANT !== me.tenant) { setLeads([]); setTasks([]); setProducts([]); setSends({}); }
+        TENANT = me.tenant;
+        loadBrand();
         const L = l.data.map(r => r.data), T = t.data.map(r => r.data);
         const cat = normalizeStringList((s.data.find(r => r.key === 'categories') || {}).value, dummyCategories);
         const ref = normalizeStringList((s.data.find(r => r.key === 'references') || {}).value, dummyReferences);
@@ -2334,14 +2345,14 @@
         const up = items.filter(o => prev.get(String(o.id)) !== next.get(String(o.id)));
         const del = [...prev.keys()].filter(k => !next.has(k));
         synced.current[table] = next;
-        if (up.length) { const { error } = await sb.from(table).upsert(up.map(o => rowOf(table, o))); if (error) showToast('Save failed: ' + error.message, 'error'); }
-        if (del.length) { const { error } = await sb.from(table).delete().in('id', del); if (error) showToast('Delete failed: ' + error.message, 'error'); }
+        if (up.length) { const { error } = await sb.from(TBL[table]).upsert(up.map(o => rowOf(table, o)), { onConflict: ON[table] }); if (error) showToast('Save failed: ' + error.message, 'error'); }
+        if (del.length) { const { error } = await sb.from(TBL[table]).delete().in('id', del); if (error) showToast('Delete failed: ' + error.message, 'error'); }
       };
       const syncSetting = async (key, value) => {
         const str = JSON.stringify(value);
         if (synced.current[key] === str) return;
         synced.current[key] = str;
-        const { error } = await sb.from('settings').upsert({ key, value }); if (error) showToast('Save failed: ' + error.message, 'error');
+        const { error } = await sb.from(TBL.settings).upsert({ key, value }, { onConflict: ON.settings }); if (error) showToast('Save failed: ' + error.message, 'error');
       };
       useEffect(() => { if (loaded) syncTable('leads', leads); }, [leads, loaded]);
       useEffect(() => { if (loaded) syncTable('tasks', tasks); }, [tasks, loaded]);
@@ -2366,10 +2377,13 @@
           if (table === 'leads') { try { notifyLeadChange(prevStr ? JSON.parse(prevStr) : null, obj); } catch (e) {} }
           setter(prev => prev.some(o => String(o.id) === id) ? prev.map(o => String(o.id) === id ? obj : o) : [obj, ...prev]);
         };
-        const ch = sb.channel('leadmaster-live')
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'leads' }, p => applyRow('leads', setLeads, p))
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, p => applyRow('tasks', setTasks, p))
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'settings' }, p => {
+        const F = 'tenant=eq.' + TENANT;
+        const mine = (p) => { const r = p.eventType === 'DELETE' ? p.old : p.new; return !r || !r.tenant || r.tenant === TENANT; };
+        const ch = sb.channel('leadmaster-live-' + TENANT)
+          .on('postgres_changes', { event: '*', schema: 'public', table: TBL.leads, filter: F }, p => { if (mine(p)) applyRow('leads', setLeads, p); })
+          .on('postgres_changes', { event: '*', schema: 'public', table: TBL.tasks, filter: F }, p => { if (mine(p)) applyRow('tasks', setTasks, p); })
+          .on('postgres_changes', { event: '*', schema: 'public', table: TBL.settings, filter: F }, p => {
+            if (!mine(p)) return;
             if (!p.new || !p.new.key) return;
             if (p.new.key === 'latest_version') { announceVersion(p.new.value); return; }
             const key = p.new.key;
@@ -2385,10 +2399,11 @@
             else if (key === 'references') setReferences(value);
             else if (key === 'whatsapp') setWaSettings(value);
           })
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => { loadProducts(); })
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'lead_sends' }, () => { loadSends(); })
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, async () => {
-            const { data } = await sb.from('profiles').select('*');
+          .on('postgres_changes', { event: '*', schema: 'public', table: TBL.products, filter: F }, p => { if (mine(p)) loadProducts(); })
+          .on('postgres_changes', { event: '*', schema: 'public', table: TBL.lead_sends, filter: F }, p => { if (mine(p)) loadSends(); })
+          .on('postgres_changes', { event: '*', schema: 'public', table: TBL.profiles, filter: F }, async (p) => {
+            if (!mine(p)) return;
+            const { data } = await sb.from(TBL.profiles).select('*');
             if (data) setUsers(data.map(profileToUser));
           })
           .subscribe();
@@ -2414,7 +2429,7 @@
         };
         const refresh = async () => {
           if (document.hidden) return;
-          const { data } = await sb.from('settings').select('*');
+          const { data } = await sb.from(TBL.settings).select('*');
           if (data) data.forEach(r => { if (r.key === 'latest_version') announceVersion(r.value); else apply(r.key, r.value); });
           loadProducts();
         };
@@ -2455,7 +2470,7 @@
         if (!loaded || APP_VERSION === 'dev') return;
         sb.auth.getUser().then(({ data }) => {
           if (!data || !data.user) return;
-          sb.from('app_clients').upsert({ auth_id: data.user.id, platform: isNativeApp() ? 'android' : 'browser', version: APP_VERSION,
+          sb.from(TBL.app_clients).upsert({ auth_id: data.user.id, platform: isNativeApp() ? 'android' : 'browser', version: APP_VERSION,
             user_agent: navigator.userAgent.slice(0, 300), last_seen: new Date().toISOString() }, { onConflict: 'auth_id,platform' }).then(() => {});
         });
       }, [loaded]);
@@ -2463,8 +2478,8 @@
       // A device running a newer version tells everyone (Supabase realtime) → others check for the update right away
       useEffect(() => {
         if (!loaded || APP_VERSION === 'dev') return;
-        sb.rpc('report_app_version', { v: APP_VERSION }).then(() => {});
-        sb.from('settings').select('value').eq('key', 'latest_version').maybeSingle().then(({ data }) => { if (data) announceVersion(data.value); });
+        sb.rpc('lm_report_version', { v: APP_VERSION }).then(() => {});
+        sb.from(TBL.settings).select('value').eq('key', 'latest_version').maybeSingle().then(({ data }) => { if (data) announceVersion(data.value); });
       }, [loaded]);
 
       // Ask once for browser notification permission (web only; the Android app asks on its own)
@@ -2551,16 +2566,11 @@
         }, 3000);
       };
 
-      const handleLogin = async (loginId, password) => {
-        let { data, error } = await sb.auth.signInWithPassword({ email: toEmail(loginId), password });
-        if (error && loginId.trim().toLowerCase() === initialAdmin.loginId.toLowerCase()) {
-          // First-time setup: creates the owner admin account if the system is still empty
-          try { await adminCall({ action: 'bootstrap', profile: { ...initialAdmin, loginId: loginId.trim(), password: undefined }, password }); } catch (e) { /* already set up */ }
-          ({ data, error } = await sb.auth.signInWithPassword({ email: toEmail(loginId), password }));
-        }
-        if (error) { showToast('Invalid Login ID or Password.', 'error'); return; }
-        const u = await loadAll(data.user);
-        if (u) showToast(`Welcome back, ${u.name}!`, 'success');
+      const handleLogin = async () => { if (window.NexGenShell && window.NexGenShell.logout) window.NexGenShell.logout(); };
+      const [noAccess, setNoAccess] = useState(false);
+      const [brand, setBrand] = useState(null);
+      const loadBrand = async () => {
+        try { const { data } = await sb.rpc('my_brand'); if (data) { setBrand(data); if (data.company_name) document.title = data.company_name + ' · LeadMaster'; } } catch (e) {}
       };
 
       const handleImportCredentialsLogin = (importedUser, importedCategories, importedReferences) => {
@@ -2596,7 +2606,7 @@
         showToast(`Access Card accepted! Welcome ${importedUser.name}.`, 'success');
       };
 
-      const handleLogout = async () => { await sb.auth.signOut(); setLoaded(false); setCurrentUser(null); setLeads([]); setTasks([]); setUsers([]); setProducts([]); showToast('You have been logged out.', 'success'); };
+      const handleLogout = async () => { try { await sb.auth.signOut({ scope: 'local' }); } catch (e) {} setLoaded(false); setCurrentUser(null); setLeads([]); setTasks([]); setUsers([]); setProducts([]); TENANT = ''; if (window.NexGenShell && window.NexGenShell.logout) window.NexGenShell.logout(); };
 
       // Data Handlers
       const stripPw = (u) => { const { password, ...rest } = u; return rest; };
@@ -2712,10 +2722,10 @@
         try {
           const blob = await buildCollageBlob(images.map(i => i.url));
           if (!blob) return { url: '', path: '' };
-          const path = id + '/collage-' + Date.now() + '.jpg';
-          const { error } = await sb.storage.from('product-images').upload(path, blob, { contentType: 'image/jpeg', cacheControl: '31536000', upsert: false });
+          const path = imgPath(id + '/collage-' + Date.now() + '.jpg');
+          const { error } = await sb.storage.from(IMG_BUCKET).upload(path, blob, { contentType: 'image/jpeg', cacheControl: '31536000', upsert: false });
           if (error) return { url: '', path: '' };
-          return { url: sb.storage.from('product-images').getPublicUrl(path).data.publicUrl, path };
+          return { url: sb.storage.from(IMG_BUCKET).getPublicUrl(path).data.publicUrl, path };
         } catch (e) { return { url: '', path: '' }; }
       };
       // Products saved before this version get their combined picture the first time the admin opens the app
@@ -2729,7 +2739,7 @@
             if (cancelled) return;
             const c = await uploadCollage(p.id, p.images);
             if (!c.url) continue;
-            const { error } = await sb.from('products').update({ collage_url: c.url, collage_path: c.path }).eq('id', p.id);
+            const { error } = await sb.from(TBL.products).update({ collage_url: c.url, collage_path: c.path }).eq('id', p.id);
             if (!error) setProducts(prev => prev.map(x => x.id === p.id ? { ...x, collage_url: c.url, collage_path: c.path } : x));
           }
         })();
@@ -2742,10 +2752,10 @@
         try {
           for (const file of draft.newFiles) {
             const blob = await compressImage(file);
-            const path = id + '/' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.jpg';
-            const { error } = await sb.storage.from('product-images').upload(path, blob, { contentType: 'image/jpeg', cacheControl: '31536000', upsert: false });
+            const path = imgPath(id + '/' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.jpg');
+            const { error } = await sb.storage.from(IMG_BUCKET).upload(path, blob, { contentType: 'image/jpeg', cacheControl: '31536000', upsert: false });
             if (error) throw new Error('Photo upload failed: ' + error.message);
-            uploaded.push({ url: sb.storage.from('product-images').getPublicUrl(path).data.publicUrl, path });
+            uploaded.push({ url: sb.storage.from(IMG_BUCKET).getPublicUrl(path).data.publicUrl, path });
           }
           const images = [...draft.images, ...uploaded];
           const old = products.find(x => x.id === id);
@@ -2755,29 +2765,29 @@
           const row = { id, name: draft.name.trim(), description: draft.description.trim(), price: String(draft.price || '').trim(),
             images, active: !!draft.active, sort_order: draft.sort_order != null ? draft.sort_order : Date.now(),
             collage_url: collage.url, collage_path: collage.path };
-          const { error } = await sb.from('products').upsert(row);
+          const { error } = await sb.from(TBL.products).upsert(row, { onConflict: ON.products });
           if (error) throw new Error(error.message);
           const stale = [...draft.removedPaths, ...(old && old.collage_path && old.collage_path !== collage.path ? [old.collage_path] : [])];
-          if (stale.length) await sb.storage.from('product-images').remove(stale);
+          if (stale.length) await sb.storage.from(IMG_BUCKET).remove(stale);
           setProducts(prev => sortProducts([...prev.filter(p => p.id !== id), normalizeProduct(row)]));
           showToast(draft.id ? 'Product updated.' : 'Product added.', 'success');
         } catch (err) {
-          if (uploaded.length) await sb.storage.from('product-images').remove(uploaded.map(u => u.path));
+          if (uploaded.length) await sb.storage.from(IMG_BUCKET).remove(uploaded.map(u => u.path));
           throw err;
         }
       };
       const handleToggleProduct = async (p) => {
-        const { error } = await sb.from('products').update({ active: !p.active }).eq('id', p.id);
+        const { error } = await sb.from(TBL.products).update({ active: !p.active }).eq('id', p.id);
         if (error) { showToast('Could not update: ' + error.message, 'error'); return; }
         setProducts(prev => prev.map(x => x.id === p.id ? { ...x, active: !p.active } : x));
         showToast(p.active ? '"' + p.name + '" discontinued — it will not be sent any more.' : '"' + p.name + '" is active again.', 'success');
       };
       const handleDeleteProduct = async (p) => {
         if (!window.confirm('Delete "' + p.name + '" and its photos?')) return;
-        const { error } = await sb.from('products').delete().eq('id', p.id);
+        const { error } = await sb.from(TBL.products).delete().eq('id', p.id);
         if (error) { showToast('Delete failed: ' + error.message, 'error'); return; }
         const paths = [...p.images.map(i => i.path), p.collage_path].filter(Boolean);
-        if (paths.length) await sb.storage.from('product-images').remove(paths);
+        if (paths.length) await sb.storage.from(IMG_BUCKET).remove(paths);
         setProducts(prev => prev.filter(x => x.id !== p.id));
         showToast('Product deleted.', 'error');
       };
@@ -2809,7 +2819,17 @@
           <>
             <Toast {...toast} />
             {overlays}
-            <LoginView onLogin={handleLogin} onImportLogin={handleImportCredentialsLogin} showToast={showToast} canInstall={!!installEvt} onInstall={installApp} />
+            <div className="min-h-screen flex items-center justify-center bg-slate-900 p-6">
+              {noAccess ? (
+                <div className="bg-white rounded-2xl p-6 max-w-sm text-center shadow-2xl">
+                  <h2 className="text-lg font-bold text-slate-800">LeadMaster is not set up for this login</h2>
+                  <p className="text-sm text-slate-500 mt-2">Ask your admin to add you as a LeadMaster user, or log in with your LeadMaster ID.</p>
+                  <button onClick={handleLogout} className="mt-4 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold">Log in with another account</button>
+                </div>
+              ) : (
+                <div className="text-center"><div className="w-10 h-10 mx-auto rounded-full border-4 border-slate-700 border-t-indigo-400 animate-spin" /><p className="text-slate-400 text-sm mt-4">Opening LeadMaster…</p></div>
+              )}
+            </div>
           </>
         );
       }
@@ -2825,13 +2845,21 @@
             <button onClick={() => setMenuOpen(true)} aria-label="Open menu" className="p-2 -ml-2 rounded-lg hover:bg-slate-800">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
             </button>
-            <span className="font-bold tracking-tight flex-1">LeadMaster <span className="text-[10px] font-medium text-slate-400 ml-1">v{APP_VERSION}</span></span>
+            <span className="font-bold tracking-tight flex-1 flex items-center gap-2 min-w-0">{brand && brand.logo && <img src={brand.logo} alt="" className="w-7 h-7 rounded-md bg-white object-contain shrink-0" />}<span className="truncate">{(brand && brand.company_name) || 'LeadMaster'}</span> <span className="text-[10px] font-medium text-slate-400 shrink-0">v{APP_VERSION}</span></span>
             <span className="text-xs text-slate-400 truncate max-w-[40%]">{currentUser.name}</span>
           </div>
           {menuOpen && <div className="fixed inset-0 bg-black/50 z-40 md:hidden" onClick={() => setMenuOpen(false)} />}
           <div className={`fixed inset-y-0 left-0 w-72 max-w-[85vw] bg-slate-900 text-slate-300 flex flex-col z-50 transition-transform duration-200 md:sticky md:top-0 md:h-screen md:w-64 md:max-w-none md:shrink-0 md:translate-x-0 ${menuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
             <div className="p-6">
-              <h1 className="text-2xl font-bold text-white flex items-center tracking-tight"><TrendingUp className="w-6 h-6 mr-2 text-indigo-400" /> LeadMaster</h1>
+              {brand && (brand.company_name || brand.logo) ? (
+                <div className="flex items-center gap-3">
+                  {brand.logo ? <img src={brand.logo} alt="" className="w-11 h-11 rounded-xl bg-white object-contain p-0.5 shrink-0" /> : <TrendingUp className="w-7 h-7 text-indigo-400 shrink-0" />}
+                  <div className="min-w-0"><h1 className="text-lg font-bold text-white leading-tight truncate" title={brand.company_name}>{brand.company_name || 'LeadMaster'}</h1>
+                  <p className="text-[11px] text-slate-400">LeadMaster · v{APP_VERSION}</p></div>
+                </div>
+              ) : (
+                <h1 className="text-2xl font-bold text-white flex items-center tracking-tight"><TrendingUp className="w-6 h-6 mr-2 text-indigo-400" /> LeadMaster <span className="text-[10px] font-medium text-slate-400 ml-2">v{APP_VERSION}</span></h1>
+              )}
               <div className="mt-4 px-3 py-2 bg-slate-800 rounded-lg border border-slate-700 flex items-center">
                  <div className="w-8 h-8 rounded-full bg-indigo-500 text-white flex items-center justify-center font-bold mr-3">{currentUser.name.charAt(0)}</div>
                  <div className="flex-1 overflow-hidden"><p className="text-sm font-medium text-white truncate">{currentUser.name}</p><p className="text-xs text-slate-400 capitalize">{currentUser.role}</p></div>

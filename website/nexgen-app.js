@@ -117,9 +117,10 @@
     setTimeout(function () { btn && btn.classList.add('mini'); }, 7000);
   }
   var sheetOpen = false, onPrompt = [];
+  var clicked = function () { return !navigator.userActivation || navigator.userActivation.isActive; };
   function installSheet() {
     if (sheetOpen) return;
-    if (!isAndroid && deferred) return webInstall();          // Chrome / Edge: straight to the browser's own "Install app?" window
+    if (!isAndroid && deferred && clicked()) return webInstall();   // a click: straight to the browser's own "Install app?" window
     sheetOpen = true; mount();
     var m = el('<div class="mask"><div class="sheet"><div class="row"><img alt="" src="' + esc(ICON) + '"><div><h3>' + esc(NAME) + '</h3>' +
       '<p style="margin:0">' + (isAndroid ? 'Install the app on this phone' : 'Install it as an app on this computer') + '</p></div></div><div data-body></div>' +
@@ -158,11 +159,16 @@
   function install() { installSheet(); }
   function webInstall() {
     if (!deferred) return installSheet();
-    var ev = deferred; deferred = null;
-    try { ev.prompt(); } catch (e) { return installSheet(); }
+    var ev = deferred;
+    if (!clicked()) return installSheet();          // never spend the browser's install offer without a click
+    deferred = null;
+    var keep = function () { if (!deferred) deferred = ev; };
+    var pr; try { pr = ev.prompt(); } catch (e) { keep(); return; }
+    if (pr && pr.catch) pr.catch(keep);
     (ev.userChoice || Promise.resolve()).then(function (c) {
       if (c && c.outcome === 'accepted') { if (btn) { btn.remove(); btn = null; } }
-    });
+      else keep();                                   // "Cancel": the Install button works again
+    }).catch(keep);
   }
   window.addEventListener('beforeinstallprompt', function (e) {
     e.preventDefault(); deferred = e;
