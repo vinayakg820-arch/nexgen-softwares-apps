@@ -6,7 +6,7 @@
 <title>NexGen Softwares</title>
 <meta name="theme-color" content="#1e1b4b">
 <link rel="manifest" href="manifest.json">
-<script src="nexgen-app.js" data-app="portal" data-version="1.8.0" data-name="NexGen Softwares" data-icon="icon-192.png" data-color="#4f46e5"></script>
+<script src="nexgen-app.js" data-app="portal" data-version="1.9.0" data-name="NexGen Softwares" data-icon="icon-192.png" data-color="#4f46e5"></script>
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
@@ -248,7 +248,7 @@ pre.code{background:#0f172a;color:#e2e8f0;padding:14px;border-radius:12px;overfl
 /* =====================================================================
    NexGen Softwares – Super Admin & Customer Portal
    ===================================================================== */
-const APP_VERSION = '1.8.0';
+const APP_VERSION = '1.9.0';
 const SUPABASE_URL = 'https://nqqbduqqiwpaixmrweef.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_eKTOE3ywBI9ye02QFVDmvg_231pdTTJ';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
@@ -384,7 +384,7 @@ function liveSubs(customerId) {
   return currentSubs(customerId).filter(s => ['active', 'trial', 'upcoming'].includes(subState(s)));
 }
 
-const CUST_COLS = 'id,user_id,customer_code,login_email,name,mobile,email,company_name,address,city,gstin,notes,status,last_login_at,created_at,updated_at,brand_updated_at,has_logo';
+const CUST_COLS = 'id,user_id,customer_code,login_email,name,mobile,email,company_name,address,city,gstin,notes,status,last_login_at,created_at,updated_at,brand_updated_at,has_logo,is_internal';
 const BRAND_API = SUPABASE_URL + '/functions/v1/app-brand';
 const logoUrl = c => `${BRAND_API}?c=${encodeURIComponent(c.customer_code || c.tenant_code || c.code)}&logo=1&v=${c.brand_v || new Date(c.brand_updated_at || 0).getTime()}`;
 function avatarHtml(c, style = '') {
@@ -467,7 +467,10 @@ async function loadAll() {
     run(sb.from('coupons').select('*').order('created_at', { ascending: false })),
     run(sb.from('settings').select('*').eq('id', 1).single())
   ]);
-  Object.assign(S, { softwares: sw, customers: cu, subs: su, coupons: cp, settings: st || {} });
+  // the super admin's own demo shop is kept out of customer lists and totals
+  const demo = cu.find(c => c.is_internal) || null;
+  Object.assign(S, { softwares: sw, customers: cu.filter(c => !c.is_internal), subs: su.filter(s => !demo || s.customer_id !== demo.id),
+                     coupons: cp, settings: st || {}, demo });
 }
 
 /* =====================================================================
@@ -691,7 +694,8 @@ function viewDashboard(page) {
     <div class="card"><div class="card-head"><h3><i class="fas fa-layer-group" style="color:var(--brand)"></i> Softwares</h3><a href="#/softwares" class="small">Manage</a></div>
       <div class="tbl-wrap"><table class="tbl"><tbody>${S.softwares.map(sw => {
     const n = live.filter(s => s.software_id === sw.id).length;
-    return `<tr><td><div class="row"><img class="app-ic" src="${esc(iconSrc(sw.icon))}" alt=""><div><b>${esc(sw.name)}</b><div class="small muted">${sw.is_active ? 'v' + esc(sw.version || '-') : 'Inactive'}</div></div></div></td><td style="text-align:right"><b>${n}</b><div class="small muted">active</div></td></tr>`;
+    return `<tr><td><div class="row"><img class="app-ic" src="${esc(iconSrc(sw.icon))}" alt=""><div><b>${esc(sw.name)}</b><div class="small muted">${sw.is_active ? 'v' + esc(sw.version || '-') : 'Inactive'}</div></div></div></td><td style="text-align:right"><b>${n}</b><div class="small muted">active</div></td>
+      <td style="text-align:right;width:1%">${appUrl(sw) ? `<a class="btn sm ghost" href="${esc(appUrl(sw))}" target="_blank" rel="noopener" title="Open in your test shop">Open</a>` : ''}</td></tr>`;
   }).join('')}</tbody></table></div></div>
   </div>`;
 }
@@ -1242,7 +1246,8 @@ function viewSubscriptions(page) {
 function viewSoftwares(page) {
   const liveCount = id => S.customers.flatMap(c => currentSubs(c.id)).filter(s => s.software_id === id && ['active', 'trial'].includes(subState(s))).length;
   page.innerHTML = `
-  <div class="page-head"><div><h2>Softwares</h2><p>Every software you add here appears in customer registration automatically</p></div>
+  <div class="page-head"><div><h2>Softwares</h2><p>Every software you add here appears in customer registration automatically</p>
+    <p class="small" style="margin-top:6px;color:var(--brand)"><i class="fas fa-flask"></i> <b>Open</b> starts the software in your own test shop “${esc(S.demo ? S.demo.company_name : 'NexGen Demo')}” – no customer's data is ever shown there. Install each one separately from inside it (or with <b>APK</b>).</p></div>
     <button class="btn primary" id="addSw"><i class="fas fa-plus"></i> Add software</button></div>
   <div class="sw-grid">${S.softwares.map(sw => {
     const url = appUrl(sw);
@@ -1252,6 +1257,8 @@ function viewSoftwares(page) {
       <div class="prices"><div><b>${money(sw.monthly_price)}</b><span>per month</span></div><div><b>${money(sw.yearly_price)}</b><span>per year</span></div><div><b>${sw.trial_days} days</b><span>free trial</span></div></div>
       <div class="url">${url ? `<i class="fas fa-link"></i> <a href="${esc(url)}" target="_blank">${esc(url)}</a>` : '<i class="fas fa-triangle-exclamation" style="color:var(--warn)"></i> App URL not set'}</div>
       <div class="foot"><span class="small muted"><b style="color:var(--ink)">${liveCount(sw.id)}</b> active customers</span><button class="btn sm ghost" data-sw="${sw.id}"><i class="fas fa-pen"></i> Edit</button></div>
+      ${url ? `<div style="display:flex;gap:8px"><a class="btn sm primary" style="flex:1" href="${esc(url)}" target="_blank" rel="noopener"><i class="fas fa-arrow-up-right-from-square"></i> Open</a>
+        <a class="btn sm ghost" style="flex:1" href="apk/NexGen-${esc(sw.code)}.apk" download><i class="fab fa-android"></i> APK</a></div>` : ''}
     </div>`;
   }).join('') || '<div class="card empty">No softwares yet</div>'}</div>`;
   $('#addSw').onclick = () => editSoftware(null);
