@@ -33,7 +33,7 @@ jobs:
           mkdir -p out
           for f in app/build/outputs/apk/*/release/*.apk; do
             flavor=$(basename "$(dirname "$(dirname "$f")")")
-            cp "$f" "out/NexGen-${flavor}-v1.2.0.apk"
+            cp "$f" "out/NexGen-${flavor}.apk"
           done
           ls -la out
       - name: Save APKs to branch apk-builds (easy download)

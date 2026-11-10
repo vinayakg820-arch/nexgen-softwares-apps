@@ -1,1 +1,10 @@
-{ "apk_version": "1.2.0", "apps": ["portal","billing","coaching","leadmaster","society"] }
+{
+  "apk_version": "1.2.0",
+  "apps": [
+    "portal",
+    "billing",
+    "coaching",
+    "leadmaster",
+    "society"
+  ]
+}
