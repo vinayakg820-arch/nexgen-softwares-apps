@@ -9,6 +9,8 @@ def apps = [
   coaching  : [id: 'com.nexgensoftwares.coaching',   name: 'Mauli Coaching Classes',   path: '/coaching/',   color: '#055696'],
   leadmaster: [id: 'com.nexgensoftwares.leadmaster', name: 'LeadMaster',               path: '/leadmaster/', color: '#0f172a'],
   society   : [id: 'com.nexgensoftwares.society',    name: 'Society Connect',          path: '/society/',    color: '#4f46e5'],
+  // Charvi Computers' own copy of Shubh Laxmi (its own web address, not the NexGen host)
+  charvi    : [id: 'com.charvicomputers.billing',    name: 'Shubh Laxmi Billing',      path: '/',            color: '#4f46e5', host: 'charvicomputersbillingportal.edgeone.app'],
 ]
 
 android {
@@ -30,7 +32,8 @@ android {
         applicationId a.id
         resValue 'string', 'app_name', a.name
         resValue 'color', 'brand', a.color
-        manifestPlaceholders = [launchUrl: "https://${HOST}${a.path}?src=apk", hostName: HOST]
+        def h = a.host ?: HOST
+        manifestPlaceholders = [launchUrl: "https://${h}${a.path}?src=apk", hostName: h]
       }
     }
   }
