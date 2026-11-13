@@ -5,7 +5,7 @@ plugins { id 'com.android.application' }
 def HOST = 'nexgensoftwares.edgeone.dev'
 def apps = [
   portal    : [id: 'com.nexgensoftwares.portal',     name: 'NexGen Softwares',         path: '/',            color: '#1e1b4b'],
-  billing   : [id: 'com.nexgensoftwares.billing',    name: 'Shubh Laxmi Billing', path: '/billing/',    color: '#1a6cb3'],
+  billing   : [id: 'com.nexgensoftwares.billing',    name: 'Shubh Laxmi Billing', path: '/billing/',    color: '#4f46e5'],
   coaching  : [id: 'com.nexgensoftwares.coaching',   name: 'Mauli Coaching Classes',   path: '/coaching/',   color: '#055696'],
   leadmaster: [id: 'com.nexgensoftwares.leadmaster', name: 'LeadMaster',               path: '/leadmaster/', color: '#0f172a'],
   society   : [id: 'com.nexgensoftwares.society',    name: 'Society Connect',          path: '/society/',    color: '#4f46e5'],
@@ -20,8 +20,8 @@ android {
   defaultConfig {
     minSdk 21
     targetSdk 34
-    versionCode 5
-    versionName '1.2.2'
+    versionCode 6
+    versionName '1.2.3'
   }
 
   flavorDimensions 'app'

@@ -1,10 +1,10 @@
-/* Charvi Computers Billing - service worker.
+/* Shubh Laxmi Billing Software - service worker.
    Handles: push alerts for new sales, installable app, and app updates.
    Keep this file next to the HTML file, served over https.
 
    NOTE: bump SW_VERSION on every release - a byte change here is what makes
    the browser notice that a new version of the app is available. */
-const SW_VERSION = '1.9.2';
+const SW_VERSION = '2.9.0';
 
 importScripts('sw-push.js');
 
