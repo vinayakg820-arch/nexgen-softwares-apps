@@ -20,7 +20,10 @@
      ]
     }
    ],
-   "how": "Inside Shubh Laxmi: “New update available” → Update. No new APK needed."
+   "how": "Inside Shubh Laxmi: “New update available” → Update. No new APK needed.",
+   "apk": [
+    "Shubh Laxmi APK 1.2.3 – new indigo colour bar to match the new design. Optional: the old APK also gets 2.9.0 by itself; install the new one over it (no uninstall)."
+   ]
   },
   {
    "site": "2.2.1",
