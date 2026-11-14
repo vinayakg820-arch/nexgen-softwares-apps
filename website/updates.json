@@ -2,6 +2,35 @@
  "note": "Release history shown in NexGen Super Admin → Updates. Newest first. Add one entry for every website ZIP.",
  "updates": [
   {
+   "site": "2.4.0",
+   "date": "2026-11-14",
+   "title": "Ready to sell: licence plans, part payments, reminders, device limit",
+   "apps": [
+    {
+     "code": "portal",
+     "name": "NexGen Super Admin",
+     "from": "2.2.0",
+     "to": "2.3.0",
+     "notes": [
+      "Three ways to sell: Subscription (monthly / yearly / trial), Licence + monthly or periodic amount, One-time licence for a fixed period",
+      "Part payments: received now + balance with the date the customer promised; Receive payment, payment history, Payments to collect on the dashboard",
+      "Customer's password visible to you (Show password), change / reset any time; customer can change it from the portal",
+      "Logged-in devices on the customer page + Log out all devices"
+     ]
+    },
+    {
+     "code": "all",
+     "name": "All softwares",
+     "notes": [
+      "Countdown before the plan ends: yearly plans in the last 30 days, monthly plans in the last 8 days (7 days left, 6 days left…); then the software stops, data stays safe and opens again on renewal",
+      "One login = one phone app + one computer at the same time; logging in on another computer logs the old one out",
+      "Welcome screen on first login shows the plan and how many days it is valid"
+     ]
+    }
+   ],
+   "how": "Super Admin: “New update available” → Update now. Softwares get it on their next open. No new APK needed."
+  },
+  {
    "site": "2.3.0",
    "date": "2026-11-13",
    "title": "Shubh Laxmi Billing Software 2.9.0 – new design",

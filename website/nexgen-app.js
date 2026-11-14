@@ -76,7 +76,7 @@
     '.bar{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 14px);transform:translateX(-50%);pointer-events:auto;background:#0f172a;color:#fff;border-radius:14px;' +
     'padding:10px 10px 10px 14px;display:flex;gap:10px;align-items:center;font-size:13px;box-shadow:0 10px 30px rgba(0,0,0,.3);width:min(400px,calc(100vw - 24px))}' + '.bar span{flex:1}' +
     '.bar a{color:#fff;background:#25d366;border-radius:9px;padding:6px 10px;text-decoration:none;font-weight:700;white-space:nowrap}' +
-    '.bar button{background:transparent;border:0;color:#94a3b8;font-size:18px;cursor:pointer}' +
+    '.bar button{background:transparent;border:0;color:#94a3b8;font-size:18px;cursor:pointer}.bar.urgent{background:#b91c1c}.bar.urgent button{color:#fecaca}.gate p.sm{font-size:13px;color:#64748b}' +
     '.ver{position:fixed;right:6px;bottom:calc(env(safe-area-inset-bottom,0px) + 6px);pointer-events:auto;display:flex;align-items:center;gap:5px;' +
     'background:rgba(255,255,255,.92);color:#334155;border:1px solid #e2e8f0;border-radius:999px;padding:3px 9px 3px 7px;font-size:11px;font-weight:700;' +
     'box-shadow:0 2px 8px rgba(15,23,42,.12);cursor:pointer;opacity:.85}' +
@@ -334,7 +334,57 @@
     document.addEventListener('visibilitychange', function () { if (!document.hidden) checkVersion(); });
   }
 
-  if (!GATE) { window.NexGenShell = { app: APP, install: install, afterLogin: afterLogin, update: hardUpdate }; return; }
+
+  /* ===================================================================
+     ONE PHONE APP + ONE COMPUTER PER LOGIN
+     The APK and one browser may be open together. Logging in on a third
+     place takes over that kind's slot and logs the older device out.
+     =================================================================== */
+  var KIND = inApk ? 'apk' : 'web';
+  function deviceId() {
+    var d = ls('ngs-device');
+    if (!d) { d = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(36).slice(2)); ls('ngs-device', d); }
+    return d;
+  }
+  function deviceLabel() {
+    var os = /android/i.test(ua) ? 'Android phone' : isIOS ? 'iPhone / iPad' : /windows/i.test(ua) ? 'Windows computer' : /mac os/i.test(ua) ? 'Mac' : /linux/i.test(ua) ? 'Linux computer' : 'Computer';
+    var br = KIND === 'apk' ? 'App' : /edg\//i.test(ua) ? 'Edge' : /opr\//i.test(ua) ? 'Opera' : /firefox/i.test(ua) ? 'Firefox' : /chrome/i.test(ua) ? 'Chrome' : /safari/i.test(ua) ? 'Safari' : 'Browser';
+    return os + ' · ' + br;
+  }
+  function deviceArgs() { return { p_kind: KIND, p_device: deviceId(), p_label: deviceLabel() }; }
+  var guardOn = false, guardTimer = null, kickedEl = null;
+  function kicked(by) {
+    if (kickedEl) return;
+    try { localStorage.removeItem(STORE); Object.keys(localStorage).forEach(function (k) { if (k.indexOf('ngs-lic-') === 0) localStorage.removeItem(k); }); sessionStorage.removeItem('ngs-switch'); } catch (e) { }
+    mount();
+    kickedEl = el('<div class="gate"><div class="card"><img class="logo" alt="" src="' + esc(ICON) + '"><h2>Logged out on this ' + (KIND === 'apk' ? 'phone' : 'computer') + '</h2>' +
+      '<p>This account was just opened on another ' + (KIND === 'apk' ? 'phone app' : 'computer / browser') + (by ? ' (<b>' + esc(by) + '</b>)' : '') + '.</p>' +
+      '<p class="sm">One login can be used on <b>one phone app</b> and <b>one computer</b> at the same time. Your data is safe.</p>' +
+      '<a class="btn pri" href="' + esc(ROOT + 'portal/' + (APP !== 'portal' ? '?app=' + encodeURIComponent(APP) : '')) + '">Log in here again</a></div></div>');
+    document.documentElement.classList.add('ngs-lock');
+  }
+  function guardTick() {
+    if (document.hidden || kickedEl) return;
+    var s = readSession();
+    if (!s || !s.access_token || (s.expires_at && s.expires_at * 1000 < Date.now() + 5000)) return;   // the app refreshes its own login; check next time
+    fetch(SB + '/rest/v1/rpc/device_check', {
+      method: 'POST', headers: { apikey: KEY, Authorization: 'Bearer ' + s.access_token, 'Content-Type': 'application/json' }, body: JSON.stringify(deviceArgs())
+    }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) { if (d && d.ok === false) kicked(d.by); }).catch(function () { });
+  }
+  function startGuard() {
+    if (guardOn) { guardTick(); return; }
+    guardOn = true; guardTick();
+    guardTimer = setInterval(guardTick, 60000);
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) guardTick(); });
+  }
+  // after a password login: take this device's slot (logs the older one out)
+  function deviceClaim(accessToken) {
+    return fetch(SB + '/rest/v1/rpc/device_claim', {
+      method: 'POST', headers: { apikey: KEY, Authorization: 'Bearer ' + accessToken, 'Content-Type': 'application/json' }, body: JSON.stringify(deviceArgs())
+    }).then(function (r) { return r.ok ? r.json() : {}; }).then(function (d) { startGuard(); return d || {}; }).catch(function () { startGuard(); return {}; });
+  }
+
+  if (!GATE) { window.NexGenShell = { app: APP, install: install, afterLogin: afterLogin, update: hardUpdate, guard: startGuard, deviceClaim: deviceClaim, deviceArgs: deviceArgs }; return; }
 
   /* ===================================================================
      LICENCE GATE
@@ -409,7 +459,8 @@
     if (ls(key)) return;
     supportMobile().then(function (st) {
       mount();
-      var b = el('<div class="bar"><span>' + esc(NAME) + ' plan ends ' + (app.days_left <= 0 ? 'today' : 'in ' + app.days_left + ' day' + (app.days_left === 1 ? '' : 's')) + '</span>' +
+      var left = app.days_left <= 0 ? '<b>Last day today</b>' : '<b>' + app.days_left + ' day' + (app.days_left === 1 ? '' : 's') + ' left</b>';
+      var b = el('<div class="bar' + (app.days_left <= 3 ? ' urgent' : '') + '"><span>⏳ ' + left + ' – your ' + esc(NAME) + ' plan ends on ' + fmtD(app.end_date) + '. Renew to keep using it; your data stays safe.</span>' +
         (st.support_mobile ? '<a target="_blank" rel="noopener" href="' + esc(wa(st.support_mobile, 'Hello, please renew ' + NAME + '.')) + '">Renew</a>' : '') +
         '<button aria-label="Close">&times;</button></div>');
       b.querySelector('button').onclick = function () { ls(key, '1'); b.remove(); };
@@ -443,7 +494,8 @@
             else { try { sessionStorage.removeItem('ngs-switch'); } catch (e) { } if (swEl) { swEl.remove(); swEl = null; } }
             var c = me.customer || {};
             afterLogin({ tenant_code: c.tenant_code || c.code, company: c.company_name || c.name });
-            if (app.days_left <= 5) soonBar(app);
+            if (app.days_left <= (app.remind_days || 8)) soonBar(app);
+            startGuard();
             return;
           }
           ls(LIC, null);
@@ -463,9 +515,10 @@
         if (!me) return;
         if (me.role === 'super_admin') showSwitch('admin');
         else if (me.role === 'customer' && (me.apps || []).length > 1) showSwitch('apps');
+        if (me.role === 'customer' || me.role === 'member') startGuard();
       });
     }).catch(function () { });
-    window.NexGenShell = { app: APP, ownLogin: true, session: freshSession, toPanel: function () { location.href = ROOT + 'portal/?app=' + encodeURIComponent(APP); },
+    window.NexGenShell = { app: APP, ownLogin: true, session: freshSession, guard: startGuard, deviceClaim: deviceClaim, deviceArgs: deviceArgs, toPanel: function () { location.href = ROOT + 'portal/?app=' + encodeURIComponent(APP); },
       install: install, afterLogin: afterLogin, checkLatest: checkLatest, update: hardUpdate };
     return;
   }
@@ -476,5 +529,5 @@
   document.addEventListener('visibilitychange', function () {
     if (!document.hidden && Date.now() - lastCheck > 30 * 60 * 1000) { lastCheck = Date.now(); check(); }
   });
-  window.NexGenShell = { app: APP, session: freshSession, toPanel: function () { location.href = ROOT + 'portal/'; }, logout: logoutAll, install: install, afterLogin: afterLogin, checkLatest: checkLatest, update: hardUpdate };
+  window.NexGenShell = { app: APP, session: freshSession, guard: startGuard, deviceClaim: deviceClaim, deviceArgs: deviceArgs, toPanel: function () { location.href = ROOT + 'portal/'; }, logout: logoutAll, install: install, afterLogin: afterLogin, checkLatest: checkLatest, update: hardUpdate };
 })();
