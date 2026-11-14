@@ -374,7 +374,9 @@
      The APK and one browser may be open together. Logging in on a third
      place takes over that kind's slot and logs the older device out.
      =================================================================== */
-  var KIND = inApk ? 'apk' : 'web';
+  // slot by device type: any phone / tablet (APK or browser) = the phone slot, a laptop / desktop = the computer slot
+  var isMobile = inApk || isAndroid || isIOS || /mobi|tablet/i.test(ua);
+  var KIND = isMobile ? 'apk' : 'web';
   function deviceId() {
     var d = ls('ngs-device');
     if (!d) { d = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(36).slice(2)); ls('ngs-device', d); }
@@ -382,7 +384,7 @@
   }
   function deviceLabel() {
     var os = /android/i.test(ua) ? 'Android phone' : isIOS ? 'iPhone / iPad' : /windows/i.test(ua) ? 'Windows computer' : /mac os/i.test(ua) ? 'Mac' : /linux/i.test(ua) ? 'Linux computer' : 'Computer';
-    var br = KIND === 'apk' ? 'App' : /edg\//i.test(ua) ? 'Edge' : /opr\//i.test(ua) ? 'Opera' : /firefox/i.test(ua) ? 'Firefox' : /chrome/i.test(ua) ? 'Chrome' : /safari/i.test(ua) ? 'Safari' : 'Browser';
+    var br = inApk ? 'App' : /edg\//i.test(ua) ? 'Edge' : /opr\//i.test(ua) ? 'Opera' : /firefox/i.test(ua) ? 'Firefox' : /chrome/i.test(ua) ? 'Chrome' : /safari/i.test(ua) ? 'Safari' : 'Browser';
     return os + ' · ' + br;
   }
   function deviceArgs() { return { p_kind: KIND, p_device: deviceId(), p_label: deviceLabel() }; }
@@ -392,8 +394,8 @@
     try { localStorage.removeItem(STORE); Object.keys(localStorage).forEach(function (k) { if (k.indexOf('ngs-lic-') === 0) localStorage.removeItem(k); }); sessionStorage.removeItem('ngs-switch'); } catch (e) { }
     mount();
     kickedEl = el('<div class="gate"><div class="card"><img class="logo" alt="" src="' + esc(ICON) + '"><h2>Logged out on this ' + (KIND === 'apk' ? 'phone' : 'computer') + '</h2>' +
-      '<p>This account was just opened on another ' + (KIND === 'apk' ? 'phone app' : 'computer / browser') + (by ? ' (<b>' + esc(by) + '</b>)' : '') + '.</p>' +
-      '<p class="sm">One login can be used on <b>one phone app</b> and <b>one computer</b> at the same time. Your data is safe.</p>' +
+      '<p>This account was just opened on another ' + (KIND === 'apk' ? 'phone' : 'computer') + (by ? ' (<b>' + esc(by) + '</b>)' : '') + '.</p>' +
+      '<p class="sm">One login can be used on <b>one phone</b> and <b>one computer</b> at the same time. Your data is safe.</p>' +
       '<a class="btn pri" href="' + esc(ROOT + 'portal/' + (APP !== 'portal' ? '?app=' + encodeURIComponent(APP) : '')) + '">Log in here again</a></div></div>');
     document.documentElement.classList.add('ngs-lock');
   }

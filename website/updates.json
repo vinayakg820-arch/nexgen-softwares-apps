@@ -2,6 +2,25 @@
  "note": "Release history shown in NexGen Super Admin → Updates. Newest first. Add one entry for every website ZIP.",
  "updates": [
   {
+   "site": "2.4.4",
+   "date": "2026-11-14",
+   "title": "Stays logged in on the phone after refresh",
+   "apps": [
+    {
+     "code": "all",
+     "name": "All softwares + Super Admin",
+     "from": "2.3.3",
+     "to": "2.3.4",
+     "notes": [
+      "Device limit now goes by device type: any phone (APK or Chrome) = the phone slot, a laptop / desktop = the computer slot",
+      "Fixes phone and laptop logging each other out (the phone was sometimes counted as a computer)",
+      "A passing network or server hiccup no longer logs the customer out – the portal retries first"
+     ]
+    }
+   ],
+   "how": "Upload the ZIP. Customers log in once more; after that refresh keeps them logged in."
+  },
+  {
    "site": "2.4.3",
    "date": "2026-11-14",
    "title": "Own subdomain for every software",
