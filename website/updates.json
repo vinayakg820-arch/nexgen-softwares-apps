@@ -2,6 +2,25 @@
  "note": "Release history shown in NexGen Super Admin → Updates. Newest first. Add one entry for every website ZIP.",
  "updates": [
   {
+   "site": "2.4.3",
+   "date": "2026-11-14",
+   "title": "Own subdomain for every software",
+   "apps": [
+    {
+     "code": "portal",
+     "name": "NexGen Super Admin",
+     "from": "2.3.2",
+     "to": "2.3.3",
+     "notes": [
+      "Every software has its own subdomain (Shubh Laxmi → shubhlaxmi, Coaching → coaching, LeadMaster → leadmaster, Society → society)",
+      "Once your own domain is saved in Settings, the login details, “Subscription Activated” and password messages send each software's own link",
+      "Opening a software's subdomain goes straight to that software"
+     ]
+    }
+   ],
+   "how": "Upload the ZIP. Then: buy/connect your domain, add the subdomains in EdgeOne, and save the domain in Super Admin → Settings."
+  },
+  {
    "site": "2.4.2",
    "date": "2026-11-14",
    "title": "Login works on Jio / Airtel connections that block the database address",

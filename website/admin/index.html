@@ -6,7 +6,7 @@
 <title>NexGen Softwares</title>
 <meta name="theme-color" content="#1e1b4b">
 <link rel="manifest" href="manifest.json?v=203">
-<script src="../nexgen-app.js" data-app="portal" data-version="2.3.2" data-name="NexGen Softwares" data-icon="../icon-192.png?v=211" data-color="#4f46e5"></script>
+<script src="../nexgen-app.js" data-app="portal" data-version="2.3.3" data-name="NexGen Softwares" data-icon="../icon-192.png?v=211" data-color="#4f46e5"></script>
 <link rel="icon" href="../logo/mark.svg" type="image/svg+xml"><link rel="icon" href="../favicon-32.png" sizes="32x32">
 <link rel="apple-touch-icon" href="../apple-touch-icon.png">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
@@ -254,7 +254,7 @@ pre.code{background:#0f172a;color:#e2e8f0;padding:14px;border-radius:12px;overfl
 /* =====================================================================
    NexGen Softwares – Super Admin & Customer Portal
    ===================================================================== */
-const APP_VERSION = '2.3.2';
+const APP_VERSION = '2.3.3';
 const AREA = /\/admin\//.test(location.pathname) ? 'admin' : 'portal';
 const SUPABASE_URL = window.NGS_SB_URL || 'https://nqqbduqqiwpaixmrweef.supabase.co';   // NexGen server route (see nexgen-app.js)
 const SUPABASE_KEY = 'sb_publishable_eKTOE3ywBI9ye02QFVDmvg_231pdTTJ';
@@ -373,6 +373,16 @@ function appUrl(sw) {
   if (S.settings.base_domain && sw.subdomain) return `https://${sw.subdomain}.${S.settings.base_domain}/`;
   return '';
 }
+// link sent to the customer: the software's own subdomain when your domain is set, else its folder on the main link
+function shareUrl(sw) {
+  if (sw && S.settings.base_domain && sw.subdomain) return `https://${sw.subdomain}.${String(S.settings.base_domain).replace(/^https?:\/\//, '').replace(/\/.*$/, '')}/`;
+  return (sw && appUrl(sw)) || portalUrl();
+}
+function custLinks(c, subs) {
+  const seen = new Set(), out = [];
+  (subs || S.subs.filter(s => s.customer_id === c.id && s.status !== 'cancelled')).forEach(s => { const sw = swById(s.software_id); if (sw && !seen.has(sw.id)) { seen.add(sw.id); out.push({ sw, url: shareUrl(sw) }); } });
+  return out;
+}
 function iconSrc(icon) { return !icon ? '../icon-192.png' : (/^(https?:|data:|\/|\.\.\/)/.test(icon) ? icon : '../' + icon); }
 
 function subState(s) {
@@ -460,8 +470,8 @@ function activatedPopup(c, subs, opts = {}) {
   const rows = (subs || []).map(s => { const sw = swById(s.software_id); return `<div class="row" style="justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line)">
       <div class="row"><img class="app-ic" src="${esc(iconSrc(sw?.icon))}" alt=""><div><b>${esc(sw?.name)}</b><div class="small muted">${esc(planShort(s))} · ${fmtD(s.start_date)} → <b>${fmtD(s.end_date)}</b></div></div></div>
       <div style="text-align:right"><b>${money(s.final_amount)}</b><div>${payCell(s)}</div></div></div>`; }).join('');
-  const msg = [`Hello ${c.name},`, '', `Your subscription is activated ✅`, ''].concat((subs || []).map(s => `• ${swById(s.software_id)?.name} – ${planLabel(s.plan)}, valid till ${fmtD(s.end_date)}`))
-    .concat(['', `Login: ${portalUrl()}`, `Email ID: ${c.email || c.customer_code}`, '', `– ${S.settings.company_name || 'NexGen Softwares'}`]).join('\n');
+  const msg = [`Hello ${c.name},`, '', `Your subscription is activated ✅`, ''].concat((subs || []).map(s => `• ${swById(s.software_id)?.name} – ${planLabel(s.plan)}, valid till ${fmtD(s.end_date)}\n  Open: ${shareUrl(swById(s.software_id))}`))
+    .concat(['', `Email ID: ${c.email || c.customer_code}`, '', `– ${S.settings.company_name || 'NexGen Softwares'}`]).join('\n');
   const m = openModal({
     title: '&nbsp;',
     body: `<div style="text-align:center;margin-top:-8px">
@@ -1239,12 +1249,13 @@ async function finishWizard(page, list) {
 function credentialsText(c, password, subs) {
   const lines = [`Welcome to ${S.settings.company_name || 'NexGen Softwares'}!`, '', `Name: ${c.name}`];
   if (c.company_name) lines.push(`Company: ${c.company_name}`);
-  lines.push('', `Login link: ${portalUrl()}`, `Email ID: ${c.email || c.customer_code}`);
+  const links = custLinks(c, subs);
+  lines.push('', links.length === 1 ? `Login link: ${links[0].url}` : `Login link (all softwares): ${portalUrl()}`, `Email ID: ${c.email || c.customer_code}`);
   if (password) lines.push(`Password: ${password}`);
   else if (!c.password_set_at) lines.push('First time: enter your Email ID, confirm your mobile number and set your own password.');
   if (subs && subs.length) {
     lines.push('', 'Your softwares:');
-    subs.forEach(s => { const sw = swById(s.software_id); lines.push(`• ${sw ? sw.name : ''} – ${planLabel(s.plan)}, valid till ${fmtD(s.end_date)}`); });
+    subs.forEach(s => { const sw = swById(s.software_id); lines.push(`• ${sw ? sw.name : ''} – ${planLabel(s.plan)}, valid till ${fmtD(s.end_date)}`); if (sw && links.length > 1) lines.push(`  ${shareUrl(sw)}`); });
   }
   lines.push('', 'You can also log in with your mobile number.');
   return lines.join('\n');
@@ -1257,7 +1268,7 @@ function showCredentials(page, c, password, subs, wizard) {
   <div class="cred">
     <div class="row" style="margin-bottom:16px">${avatarHtml(c, 'background:rgba(255,255,255,.15)')}<div><div style="font-size:18px;font-weight:800">${esc(c.company_name || c.name)}</div><div style="color:#c7d2fe">${esc(c.name)} · ${esc(c.mobile)}</div></div></div>
     <div class="grid2">
-      <div><div class="k">Login link</div><div class="v" style="font-size:14px">${esc(portalUrl())}</div></div>
+      <div><div class="k">Login link</div><div class="v" style="font-size:14px">${(() => { const l = custLinks(c, subs); return l.length === 1 ? esc(l[0].url) : esc(portalUrl()) + l.map(x => `<div style="font-size:12px;opacity:.85;margin-top:3px">${esc(x.sw.name)}: ${esc(x.url)}</div>`).join(''); })()}</div></div>
       <div><div class="k">Email ID (login)</div><div class="v" style="font-size:15px">${esc(c.email || c.customer_code)}</div></div>
       ${password ? `<div><div class="k">Password</div><div class="v">${esc(password)}</div></div>` : (!c.password_set_at ? `<div><div class="k">Password</div><div style="font-weight:600">Customer sets it on first login</div></div>` : '')}
       <div><div class="k">Softwares</div><div style="font-weight:600">${(subs || []).map(s => esc(swById(s.software_id)?.name) + ' <span style="color:#c7d2fe">(' + planLabel(s.plan) + ' till ' + fmtD(s.end_date) + ')</span>').join('<br>') || '—'}</div></div>
@@ -1402,7 +1413,7 @@ function viewCustomer(id) {
       await run(sb.rpc('admin_allow_password_setup', { p_customer_id: c.id }));
       Object.assign(c, { password_set_at: null, password_set_by: null, setup_fails: 0 });
       toast('Done. Ask the customer to open the login link and enter their Email ID.');
-      const msg = [`Hello ${c.name},`, '', 'You can now set a new password:', `1. Open ${portalUrl()}`, `2. Enter your Email ID: ${c.email}`, '3. Confirm your registered mobile number and choose a new password.', '', `– ${S.settings.company_name || 'NexGen Softwares'}`].join('\n');
+      const msg = [`Hello ${c.name},`, '', 'You can now set a new password:', `1. Open ${(() => { const l = custLinks(c); return l.length === 1 ? l[0].url : portalUrl(); })()}`, `2. Enter your Email ID: ${c.email}`, '3. Confirm your registered mobile number and choose a new password.', '', `– ${S.settings.company_name || 'NexGen Softwares'}`].join('\n');
       openModal({ title: 'Customer can set a new password', body: `<p style="margin-top:0">Send these steps to the customer:</p><pre class="small" style="white-space:pre-wrap;background:var(--bg);padding:12px;border-radius:10px">${esc(msg)}</pre>`,
         foot: `<a class="btn wa" target="_blank" href="${esc(waLink(c.mobile, msg))}"><i class="fab fa-whatsapp"></i> Send on WhatsApp</a><button class="btn primary" data-close>OK</button>` });
       route();
@@ -1639,7 +1650,7 @@ function editSoftware(sw) {
       <div class="field"><label>Short description</label><input class="inp" name="tagline" value="${esc(d.tagline || '')}"></div>
       <div class="grid2">
         <div class="field"><label>App URL (where the software is hosted)</label><input class="inp" name="app_url" value="${esc(d.app_url || '')}" placeholder="https://nexgensoftwares.edgeone.dev/&lt;code&gt;/"><span class="hint">Put the software in a folder named after its code inside the website ZIP.</span></div>
-        <div class="field"><label>Subdomain</label><input class="inp mono" name="subdomain" value="${esc(d.subdomain || '')}" placeholder="e.g. billing"><span class="hint">${S.settings.base_domain ? `→ https://&lt;subdomain&gt;.${esc(S.settings.base_domain)}` : 'Used once you set your own domain in Settings'}</span></div>
+        <div class="field"><label>Subdomain</label><input class="inp mono" name="subdomain" value="${esc(d.subdomain || '')}" placeholder="e.g. billing"><span class="hint">${S.settings.base_domain ? `Customers get → https://${esc(d.subdomain || '&lt;subdomain&gt;')}.${esc(S.settings.base_domain)}` : 'Used once you set your own domain in Settings'}</span></div>
       </div>
       <div class="grid3">
         <div class="field"><label>Pricing</label><select class="inp" name="pricing_mode"><option value="fixed" ${d.pricing_mode !== 'per_flat' ? 'selected' : ''}>Fixed monthly / yearly price</option><option value="per_flat" ${d.pricing_mode === 'per_flat' ? 'selected' : ''}>Per flat (society): flats × maintenance × share %</option></select></div>
@@ -1843,7 +1854,7 @@ async function checkNexGenLicence(softwareCode, customerId) {
       <h3>Portal</h3>
       <div class="field"><label>Company name</label><input class="inp" name="company_name" value="${esc(st.company_name || '')}"></div>
       <div class="field"><label>Portal URL (link shared with customers)</label><input class="inp" name="portal_url" value="${esc(st.portal_url || '')}" placeholder="${esc(location.origin + '/')}"><span class="hint">Leave blank to use the current address: ${esc(location.origin)}</span></div>
-      <div class="field"><label>Your own domain for software subdomains</label><input class="inp mono" name="base_domain" value="${esc(st.base_domain || '')}" placeholder="e.g. nexgensoftwares.in"><span class="hint">With this set, a software with subdomain “billing” opens at https://billing.${esc(st.base_domain || 'yourdomain.in')} (if its App URL is blank).</span></div>
+      <div class="field"><label>Your own domain for software subdomains</label><input class="inp mono" name="base_domain" value="${esc(st.base_domain || '')}" placeholder="e.g. nexgensoftwares.in"><span class="hint">With this set, each software's login link sent to customers becomes https://&lt;subdomain&gt;.${esc(st.base_domain || 'yourdomain.in')} – add the same subdomains as custom domains in EdgeOne.</span></div>
       <div class="grid2">
         <div class="field"><label>Support WhatsApp number</label><input class="inp" name="support_mobile" value="${esc(st.support_mobile || '')}" placeholder="Shown to customers for renewals"></div>
         <div class="field"><label>Support email</label><input class="inp" name="support_email" value="${esc(st.support_email || '')}"></div>

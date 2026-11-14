@@ -9,7 +9,15 @@
 // Main link: Super Admin lives in /admin/, customers in /portal/, every software in its own folder (separate apps).
 (function () {
   var target = '/portal/' + location.search + location.hash;
+  // own domain: every software has its own subdomain, e.g. shubhlaxmi.yourdomain.in → /billing/
+  var SUB = { shubhlaxmi: 'billing', billing: 'billing', coaching: 'coaching', leadmaster: 'leadmaster', society: 'society', admin: 'admin', superadmin: 'admin', app: 'portal', portal: 'portal', login: 'portal' };
+  var host = location.hostname.toLowerCase(), labels = host.split('.');
+  var ownDomain = labels.length >= 3 && !/\.(edgeone\.(dev|app|site|run)|localhost)$/.test(host) && labels[0] !== 'www';
+  if (ownDomain && SUB[labels[0]]) target = '/' + SUB[labels[0]] + '/' + location.search + location.hash;
   var go = function () { location.replace(target); };
+  if (ownDomain && !SUB[labels[0]]) {   // a subdomain added later from Super Admin → folder with the software's code
+    try { var x = new XMLHttpRequest(); x.open('GET', '/subdomains.json?t=' + Date.now(), false); x.send(); var m = JSON.parse(x.responseText || '{}'); if (m[labels[0]]) target = '/' + m[labels[0]] + '/' + location.search + location.hash; } catch (e) { }
+  }
   try {
     // remove the old site-wide service worker
     if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
