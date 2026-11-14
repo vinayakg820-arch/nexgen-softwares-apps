@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8"><script src="../nexgen-app.js" data-app="billing" data-version="2.9.2" data-splash="#boot-splash" data-name="Shubh Laxmi Billing Software" data-icon="sl-mark-256.png?v=200" data-color="#4f46e5"></script>
+    <meta charset="UTF-8"><script src="../nexgen-app.js" data-app="billing" data-version="2.9.3" data-help="menu" data-splash="#boot-splash" data-name="Shubh Laxmi Billing Software" data-icon="sl-mark-256.png?v=200" data-color="#4f46e5"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#4f46e5">
     <script>
@@ -1021,6 +1021,7 @@
         #app-side .sl-brandrow img{ width:36px; height:36px; border-radius:10px; flex:0 0 auto }
         #app-side .sl-brandrow b{ display:block; color:#fff; font-size:14px; font-weight:700 }
         #app-side .sl-brandrow span{ display:block; font-size:9px; letter-spacing:.16em; text-transform:uppercase; color:#a5b4fc; font-weight:700; margin-top:1px }
+        #app-side .sl-brandrow small{ display:block; font-size:9.5px; color:#fcd34d; font-weight:700; margin-top:3px; letter-spacing:.02em }
         #app-side .sl-grp{ font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:#8b8fd4; font-weight:700; padding:11px 10px 4px }
         #app-side a{ display:flex; align-items:center; gap:11px; padding:9px 11px; border-radius:10px; color:#c7d2fe; font-weight:500; font-size:13.5px; cursor:pointer }
         #app-side a svg,#app-side a i{ width:17px; height:17px; flex:0 0 auto; opacity:.85 }
@@ -1700,7 +1701,7 @@
         <aside id="app-side" aria-label="Main menu">
             <div class="sl-brandrow">
                 <img src="sl-mark-256.png" alt="">
-                <div><b>शुभ लक्ष्मी</b><span>Billing Software</span></div>
+                <div><b>शुभ लक्ष्मी</b><span>Billing Software</span><small class="no-i18n">By NexGen Softwares</small></div>
             </div>
             <a data-v="view-dashboard" onclick="showView('view-dashboard')"><i data-lucide="layout-dashboard"></i>Dashboard</a>
             <div class="sl-grp not-engineer">रोजचं काम</div>
@@ -1721,6 +1722,8 @@
             <a class="not-engineer admin-only" data-v="view-reports" onclick="showView('view-reports')"><i data-lucide="bar-chart-3"></i>Analysis</a>
             <a class="not-engineer" data-v="view-backup" onclick="showView('view-backup')"><i data-lucide="refresh-cw"></i>Data Sync</a>
             <a class="not-engineer admin-only" data-v="view-user-management" onclick="showView('view-user-management')"><i data-lucide="shield-check"></i>Access Control</a>
+            <a onclick="window.NexGenShell && NexGenShell.licence && NexGenShell.licence()"><i data-lucide="badge-check"></i>Licence</a>
+            <a onclick="window.NexGenShell && NexGenShell.help && NexGenShell.help()"><i data-lucide="life-buoy"></i>Help Desk</a>
             <a class="admin-only" onclick="toggleModal('profile-modal', true)"><i data-lucide="settings"></i>Settings</a>
             <div class="sl-foot">
                 <div class="av" id="side-initials">CC</div>
@@ -5153,7 +5156,7 @@
         });
 
         // --- APP VERSION & UPDATE TRACKING ---
-        const APP_VERSION = "2.9.2";
+        const APP_VERSION = "2.9.3";
         const UPDATE_DESC = "फोनवरही आता सगळे मेन्यू: खालच्या पट्टीत \"मेन्यू\" दाबा. आवृत्ती क्रमांक आणि अपडेट तपासणी - मेन्यू व सेटिंग्जमध्ये.";
 
         // --- AUTH & USER ROLES LOGIC ---
@@ -15289,6 +15292,8 @@
 (function () {
     const ROWS = [
         /* ---- 2.9.1: stock testing, pending due, bill items, backup merge ---- */
+        ["Licence", "लाइसेंस", "लायसन्स"],
+        ["Help Desk", "हेल्प डेस्क", "हेल्प डेस्क"],
         ["Different size / price for this bill?", "इस बिल के लिए अलग साइज़ / रेट?", "या बिलासाठी वेगळी साइज / किंमत?"],
         ["✎ Custom size / price", "✎ अलग साइज़ / रेट", "✎ वेगळी साइज / किंमत"],
         ["Custom for this bill", "इस बिल के लिए अलग", "या बिलासाठी वेगळं"],

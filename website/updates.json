@@ -2,6 +2,42 @@
  "note": "Release history shown in NexGen Super Admin → Updates. Newest first. Add one entry for every website ZIP.",
  "updates": [
   {
+   "site": "2.5.2",
+   "date": "2026-11-14",
+   "title": "Licence page, Help Desk and payment receipts in every software",
+   "apps": [
+    {
+     "code": "billing",
+     "name": "Shubh Laxmi Billing Software",
+     "from": "2.9.2",
+     "to": "2.9.3",
+     "notes": [
+      "Menu: new “Licence” (above Settings) – days left, plan, price, paid / balance, and every payment receipt to view / print / save as PDF",
+      "Menu: new “Help Desk” – WhatsApp, Call and Email of NexGen Softwares",
+      "“By NexGen Softwares” under Shubh Laxmi in the menu"
+     ]
+    },
+    {
+     "code": "all",
+     "name": "Other softwares",
+     "notes": [
+      "A small “?” button opens the same Licence and Help Desk"
+     ]
+    },
+    {
+     "code": "portal",
+     "name": "NexGen Super Admin",
+     "from": "2.3.4",
+     "to": "2.3.5",
+     "notes": [
+      "Settings: Support calling number (next to WhatsApp and email) – shown in every software's Help Desk",
+      "Customer page → Payments received: R-0001 receipt button to view / print and inform the customer"
+     ]
+    }
+   ],
+   "how": "Super Admin: Update now. Softwares: “New update available” → Update. No new APK needed."
+  },
+  {
    "site": "2.5.1",
    "date": "2026-11-14",
    "title": "Shubh Laxmi 2.9.2 – custom size / price for a service on the bill; DEMO label",

@@ -6,7 +6,7 @@
 <title>NexGen Softwares</title>
 <meta name="theme-color" content="#1e1b4b">
 <link rel="manifest" href="manifest.json?v=203">
-<script src="../nexgen-app.js" data-app="portal" data-version="2.3.4" data-name="NexGen Softwares" data-icon="../icon-192.png?v=211" data-color="#4f46e5"></script>
+<script src="../nexgen-app.js" data-app="portal" data-version="2.3.5" data-name="NexGen Softwares" data-icon="../icon-192.png?v=211" data-color="#4f46e5"></script>
 <link rel="icon" href="../logo/mark.svg" type="image/svg+xml"><link rel="icon" href="../favicon-32.png" sizes="32x32">
 <link rel="apple-touch-icon" href="../apple-touch-icon.png">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
@@ -254,7 +254,7 @@ pre.code{background:#0f172a;color:#e2e8f0;padding:14px;border-radius:12px;overfl
 /* =====================================================================
    NexGen Softwares – Super Admin & Customer Portal
    ===================================================================== */
-const APP_VERSION = '2.3.4';
+const APP_VERSION = '2.3.5';
 const AREA = /\/admin\//.test(location.pathname) ? 'admin' : 'portal';
 const SUPABASE_URL = window.NGS_SB_URL || 'https://nqqbduqqiwpaixmrweef.supabase.co';   // NexGen server route (see nexgen-app.js)
 const SUPABASE_KEY = 'sb_publishable_eKTOE3ywBI9ye02QFVDmvg_231pdTTJ';
@@ -1344,7 +1344,7 @@ function viewCustomer(id) {
         ${pays.map(p => { const s = S.subs.find(x => x.id === p.subscription_id), sw = s && swById(s.software_id); return `<tr><td class="small">${fmtD(p.paid_on)}</td>
           <td><b>${esc(sw?.name || '')}</b><div class="small muted">${s ? esc(planShort(s)) : ''}${p.note ? ' · ' + esc(p.note) : ''}</div></td><td><b>${money(p.amount)}</b></td>
           <td class="small">${esc(p.mode || '—')}${p.ref ? `<div class="muted mono">${esc(p.ref)}</div>` : ''}</td>
-          <td style="text-align:right"><button class="btn sm ghost" data-delpay="${p.id}" aria-label="Delete payment"><i class="fas fa-trash"></i></button></td></tr>`; }).join('')}
+          <td style="text-align:right;white-space:nowrap">${p.receipt_no ? `<button class="btn sm ghost" data-rcpt="${p.id}" title="Receipt">R-${String(p.receipt_no).padStart(4, '0')}</button> ` : ''}<button class="btn sm ghost" data-delpay="${p.id}" aria-label="Delete payment"><i class="fas fa-trash"></i></button></td></tr>`; }).join('')}
       </tbody></table></div>` : `<div class="empty">No payment received yet</div>`}
       </div>
     </div>
@@ -1382,6 +1382,17 @@ function viewCustomer(id) {
     const p = S.payments.find(x => x.id === b.dataset.delpay);
     if (!await confirmBox(`Delete the payment of <b>${money(p.amount)}</b> on ${fmtD(p.paid_on)}? The balance goes up again.`, { danger: true, okText: 'Delete' })) return;
     try { await run(sb.rpc('admin_delete_payment', { p_id: p.id })); toast('Payment deleted'); refresh(); } catch (e) { toast(errMsg(e), 'err'); }
+  });
+  $$('[data-rcpt]', page).forEach(b => b.onclick = () => {
+    const p = S.payments.find(x => x.id === b.dataset.rcpt), s = p && S.subs.find(x => x.id === p.subscription_id), sw = s && swById(s.software_id);
+    if (!p || !window.NexGenShell || !NexGenShell.receiptHtml) return;
+    const html = NexGenShell.receiptHtml({ no: p.receipt_no, date: p.paid_on, company: c.company_name || c.name, name: c.name, code: c.customer_code, gstin: c.gstin, mode: p.mode, ref: p.ref,
+      software: sw ? sw.name : '', plan: s ? planShort(s) : '', start: s && s.start_date, end: s && s.end_date, amount: p.amount, total: s ? s.final_amount : p.amount,
+      paidTotal: s ? S.payments.filter(x => x.subscription_id === s.id && (x.paid_on < p.paid_on || (x.paid_on === p.paid_on && (x.receipt_no || 0) <= (p.receipt_no || 0)))).reduce((a, x) => a + +x.amount, 0) : p.amount,
+      seller: { company: S.settings.company_name, email: S.settings.support_email, whatsapp: S.settings.support_mobile, phone: S.settings.support_phone } });
+    const m = openModal({ title: `Receipt R-${String(p.receipt_no).padStart(4, '0')}`, body: `<iframe id="rcF" style="width:100%;height:62vh;border:1px solid var(--line);border-radius:12px;background:#fff"></iframe>`,
+      foot: `<a class="btn wa" target="_blank" href="${esc(waLink(c.mobile, `Hello ${c.name},\n\nReceived ${money(p.amount)} for ${sw ? sw.name : ''} on ${fmtD(p.paid_on)} – Receipt R-${String(p.receipt_no).padStart(4, '0')}. Thank you!\n\n– ${S.settings.company_name || 'NexGen Softwares'}`))}"><i class="fab fa-whatsapp"></i> Inform customer</a><button class="btn primary" id="rcP"><i class="fas fa-print"></i> Print / PDF</button>` });
+    $('#rcF', m).srcdoc = html; $('#rcP', m).onclick = () => NexGenShell.printHtml(html);
   });
   if ($('#pwView')) $('#pwView').onclick = async () => {
     try {
@@ -1857,7 +1868,8 @@ async function checkNexGenLicence(softwareCode, customerId) {
       <div class="field"><label>Portal URL (link shared with customers)</label><input class="inp" name="portal_url" value="${esc(st.portal_url || '')}" placeholder="${esc(location.origin + '/')}"><span class="hint">Leave blank to use the current address: ${esc(location.origin)}</span></div>
       <div class="field"><label>Your own domain for software subdomains</label><input class="inp mono" name="base_domain" value="${esc(st.base_domain || '')}" placeholder="e.g. nexgensoftwares.in"><span class="hint">With this set, each software's login link sent to customers becomes https://&lt;subdomain&gt;.${esc(st.base_domain || 'yourdomain.in')} – add the same subdomains as custom domains in EdgeOne.</span></div>
       <div class="grid2">
-        <div class="field"><label>Support WhatsApp number</label><input class="inp" name="support_mobile" value="${esc(st.support_mobile || '')}" placeholder="Shown to customers for renewals"></div>
+        <div class="field"><label>Support WhatsApp number</label><input class="inp" name="support_mobile" value="${esc(st.support_mobile || '')}" placeholder="Help Desk + renewals in every software"></div>
+        <div class="field"><label>Support calling number</label><input class="inp" name="support_phone" value="${esc(st.support_phone || '')}" placeholder="For the Call button (blank = WhatsApp number)"></div>
         <div class="field"><label>Support email</label><input class="inp" name="support_email" value="${esc(st.support_email || '')}"></div>
       </div>
       <div class="field"><label>Auto Login ID prefix</label><input class="inp mono" name="customer_code_prefix" value="${esc(st.customer_code_prefix || 'NGS')}" maxlength="8" style="text-transform:uppercase"><span class="hint">Auto IDs look like ${esc(st.customer_code_prefix || 'NGS')}1001, ${esc(st.customer_code_prefix || 'NGS')}1002…</span></div>

@@ -114,6 +114,23 @@
     '.ver{position:fixed;right:6px;bottom:calc(env(safe-area-inset-bottom,0px) + 6px);pointer-events:auto;display:flex;align-items:center;gap:5px;' +
     'background:rgba(255,255,255,.92);color:#334155;border:1px solid #e2e8f0;border-radius:999px;padding:3px 9px 3px 7px;font-size:11px;font-weight:700;' +
     'box-shadow:0 2px 8px rgba(15,23,42,.12);cursor:pointer;opacity:.85}' +
+    '.nx-ov{position:fixed;inset:0;z-index:5;pointer-events:auto;background:rgba(15,23,42,.55);display:flex;align-items:center;justify-content:center;padding:14px;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}' +
+    '.nx-box{background:#fff;color:#0f172a;border-radius:22px;width:100%;max-width:560px;max-height:92vh;display:flex;flex-direction:column;box-shadow:0 30px 80px rgba(0,0,0,.35);overflow:hidden}' +
+    '.nx-hd{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid #eef0f6}.nx-hd b{font-size:17px}.nx-x{border:0;background:#f1f5f9;border-radius:999px;width:34px;height:34px;font-size:20px;cursor:pointer;color:#334155}' +
+    '.nx-bd{padding:16px 18px 18px;overflow-y:auto}.nx-mut{color:#64748b;font-size:13px;margin:6px 0}.nx-bd h4{margin:18px 0 8px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#64748b}' +
+    '.nx-hero{border-radius:18px;padding:16px;color:#fff;background:linear-gradient(135deg,#4f46e5,#1e1b4b)}.nx-hero.warn{background:linear-gradient(135deg,#d97706,#92400e)}.nx-hero.bad{background:linear-gradient(135deg,#dc2626,#7f1d1d)}' +
+    '.nx-hero b{display:block;font-size:28px;font-weight:800;margin:6px 0 2px}.nx-hero span{font-size:12.5px;opacity:.9}.nx-st{display:inline-block;background:rgba(255,255,255,.2);border-radius:999px;padding:3px 10px;font-weight:700;font-size:11px!important;letter-spacing:.06em;text-transform:uppercase}' +
+    '.nx-bar{height:6px;border-radius:9px;background:rgba(255,255,255,.25);margin-top:12px;overflow:hidden}.nx-bar i{display:block;height:100%;background:#fff;border-radius:9px}' +
+    '.nx-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.nx-grid div{background:#f8fafc;border:1px solid #eef0f6;border-radius:14px;padding:10px 12px}.nx-grid span{display:block;font-size:11px;color:#64748b;font-weight:700}.nx-grid b{display:block;font-size:13.5px;margin-top:3px}' +
+    '.nx-grid .nx-due{grid-column:1/-1;background:#fef2f2;border-color:#fecaca}.nx-due b{color:#dc2626;font-size:16px}.nx-due em{font-style:normal;font-size:12px;color:#b91c1c;font-weight:700}' +
+    '.nx-list{border:1px solid #eef0f6;border-radius:14px;overflow:hidden}.nx-it{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid #eef0f6}.nx-it:last-child{border-bottom:0}.nx-it div{flex:1;min-width:0}.nx-it div b{display:block;font-size:13px}.nx-it div span{display:block;font-size:11.5px;color:#64748b;margin-top:1px}.nx-amt{font-size:13.5px;white-space:nowrap}' +
+    '.nx-btn{border:0;background:#4f46e5;color:#fff;border-radius:999px;padding:7px 12px;font-weight:700;font-size:12px;cursor:pointer;white-space:nowrap}.nx-btn.ghost{background:#f1f5f9;color:#334155}' +
+    '.nx-cta{display:block;text-align:center;margin-top:16px;background:#16a34a;color:#fff;text-decoration:none;font-weight:800;border-radius:14px;padding:12px}' +
+    '.nx-rcpt{width:100%;height:60vh;border:1px solid #e2e8f0;border-radius:12px;background:#fff}.nx-row{display:flex;gap:8px;justify-content:flex-end;margin-top:10px}' +
+    '.nx-help{display:flex;align-items:center;gap:12px;margin-bottom:14px}.nx-help img{width:44px;height:44px;border-radius:12px}.nx-help span{display:block;font-size:12.5px;color:#64748b}.nx-help b{display:block;font-size:16px}' +
+    '.nx-hls{display:grid;gap:10px}.nx-hl{display:flex;align-items:center;gap:12px;border:1px solid #e2e8f0;border-radius:16px;padding:12px 14px;text-decoration:none;color:#0f172a;background:#fff;cursor:pointer;font:inherit;text-align:left}.nx-hl.wa{border-color:#bbf7d0;background:#f0fdf4}' +
+    '.nx-hl i{font-style:normal;font-size:22px}.nx-hl span{display:block;font-size:13px;color:#475569}.nx-hl b{display:block;font-size:14.5px;color:#0f172a}' +
+    '.nx-q{position:fixed;left:8px;bottom:calc(env(safe-area-inset-bottom,0px) + 32px);pointer-events:auto;width:34px;height:34px;border-radius:999px;border:0;background:#1e1b4b;color:#fff;font:800 16px/1 system-ui,sans-serif;cursor:pointer;box-shadow:0 6px 16px rgba(0,0,0,.25);opacity:.85}' +
     '.demo{position:fixed;right:6px;bottom:calc(env(safe-area-inset-bottom,0px) + 70px);pointer-events:auto;background:#fef3c7;color:#92400e;border:1px solid #fcd34d;border-radius:999px;padding:5px 11px;font:700 11px/1.2 system-ui,sans-serif;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.12)}.demo b{background:#b45309;color:#fff;border-radius:6px;padding:1px 5px;margin-right:4px;font-size:10px}' +
     '.sw{position:fixed;right:6px;bottom:calc(env(safe-area-inset-bottom,0px) + 32px);pointer-events:auto;display:flex;align-items:center;gap:6px;background:#1e1b4b;color:#fff;border:0;border-radius:999px;' +
     'padding:6px 12px 6px 9px;font:700 12px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;box-shadow:0 4px 14px rgba(15,23,42,.3);cursor:pointer;opacity:.92}.sw:hover{opacity:1}.sw b{font-size:14px;line-height:1}' +
@@ -432,7 +449,197 @@
     }).then(function (r) { return r.ok ? r.json() : {}; }).then(function (d) { startGuard(); return d || {}; }).catch(function () { startGuard(); return {}; });
   }
 
-  if (!GATE) { window.NexGenShell = { app: APP, install: install, afterLogin: afterLogin, update: hardUpdate, guard: startGuard, deviceClaim: deviceClaim, deviceArgs: deviceArgs }; return; }
+  /* ===================================================================
+     LICENCE + HELP DESK + RECEIPTS (every software)
+     Licence: plan, days left, price, payments with printable receipts.
+     Help Desk: email / WhatsApp / calling number set in Super Admin.
+     =================================================================== */
+  var LT = {
+    licence: ['Licence', 'लाइसेंस', 'लायसन्स'], help: ['Help Desk', 'हेल्प डेस्क', 'हेल्प डेस्क'],
+    daysLeft: ['days left', 'दिन बाकी', 'दिवस बाकी'], dayLeft: ['day left', 'दिन बाकी', 'दिवस बाकी'], lastDay: ['Last day today', 'आज आखिरी दिन', 'आज शेवटचा दिवस'],
+    expired: ['Expired', 'समाप्त', 'संपले'], active: ['Active', 'चालू', 'चालू'], trial: ['Trial', 'ट्रायल', 'ट्रायल'],
+    plan: ['Plan', 'प्लान', 'प्लॅन'], valid: ['Valid', 'वैधता', 'वैधता'], price: ['Price', 'कीमत', 'किंमत'], paid: ['Paid', 'जमा', 'भरले'],
+    balance: ['Balance due', 'बकाया', 'बाकी रक्कम'], by: ['by', 'तक', 'पर्यंत'], history: ['Subscription history', 'सब्सक्रिप्शन इतिहास', 'सबस्क्रिप्शन इतिहास'],
+    receipts: ['Payment receipts', 'पेमेंट रसीदें', 'पेमेंट पावत्या'], receipt: ['Receipt', 'रसीद', 'पावती'], view: ['View / Print', 'देखें / प्रिंट', 'पहा / प्रिंट'],
+    noReceipts: ['No payment receipts yet.', 'अभी कोई रसीद नहीं।', 'अजून पावती नाही.'],
+    renew: ['Renew on WhatsApp', 'WhatsApp पर रिन्यू करें', 'WhatsApp वर रिन्यू करा'],
+    staff: ['Price and receipts are shown to the shop owner.', 'कीमत और रसीदें दुकान मालिक को दिखती हैं।', 'किंमत आणि पावत्या दुकान मालकाला दिसतात.'],
+    demo: ['You are the Super Admin – this is your demo shop, it has no licence.', 'आप सुपर एडमिन हैं – यह आपकी डेमो दुकान है, इसका लाइसेंस नहीं।', 'तुम्ही सुपर ॲडमिन आहात – हे तुमचं डेमो दुकान आहे, याला लायसन्स नाही.'],
+    helpIntro: ['Need help with', 'मदद चाहिए', 'मदत हवी आहे'], contact: ['Contact', 'संपर्क करें', 'संपर्क करा'],
+    whatsapp: ['WhatsApp', 'WhatsApp', 'WhatsApp'], call: ['Call', 'कॉल करें', 'कॉल करा'], email: ['Email', 'ईमेल', 'ईमेल'],
+    notSet: ['Support contact is not set yet.', 'सपोर्ट संपर्क अभी सेट नहीं है।', 'सपोर्ट संपर्क अजून सेट नाही.'],
+    close: ['Close', 'बंद करें', 'बंद करा'], loading: ['Loading…', 'लोड हो रहा है…', 'लोड होत आहे…'],
+    err: ['Could not load. Check the internet and try again.', 'लोड नहीं हुआ। इंटरनेट देखकर फिर कोशिश करें।', 'लोड झालं नाही. इंटरनेट तपासून पुन्हा प्रयत्न करा.'],
+    print: ['Print / Save PDF', 'प्रिंट / PDF सेव करें', 'प्रिंट / PDF सेव्ह करा'], back: ['Back', 'वापस', 'मागे'],
+    monthly: ['Monthly', 'मासिक', 'मासिक'], yearly: ['Yearly', 'वार्षिक', 'वार्षिक'], licence1: ['One-time licence', 'एक बार लाइसेंस', 'एकदाच लायसन्स'],
+    licence_rec: ['Licence + recurring', 'लाइसेंस + नियमित', 'लायसन्स + नियमित'], recurring: ['Recurring', 'नियमित', 'नियमित'],
+    months: ['months', 'महीने', 'महिने'], everyMonth: ['every month', 'हर महीने', 'दर महिन्याला'], everyYear: ['every year', 'हर साल', 'दर वर्षी'],
+    every: ['every', 'हर', 'दर'], helpMsg: ['Hello, I need help with', 'नमस्ते, मुझे मदद चाहिए', 'नमस्कार, मला मदत हवी आहे'],
+    renewMsg: ['Hello, I want to renew', 'नमस्ते, मुझे रिन्यू करना है', 'नमस्कार, मला रिन्यू करायचं आहे']
+  };
+  function lg() { var l = 'en'; try { l = typeof window.getAppLanguage === 'function' ? window.getAppLanguage() : (document.documentElement.lang || 'en'); } catch (e) { } l = String(l).slice(0, 2); return l === 'mr' ? 2 : l === 'hi' ? 1 : 0; }
+  function T(k) { var v = LT[k]; return v ? v[lg()] : k; }
+  function rs(v) { var n = parseFloat(v) || 0; return '₹' + n.toLocaleString('en-IN', { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 }); }
+  function dmy(d) { var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(d || '')); return m ? m[3] + '-' + m[2] + '-' + m[1] : String(d || ''); }
+  function every(m) { m = +m || 1; return m === 1 ? T('everyMonth') : m === 12 ? T('everyYear') : T('every') + ' ' + m + ' ' + T('months'); }
+  function planText(s) {
+    var m = s.meta || {};
+    if (s.plan === 'trial') return T('trial');
+    if (s.plan === 'licence') return T('licence1') + ' · ' + s.periods + ' ' + T('months');
+    if (s.plan === 'licence_rec') return T('licence') + ' ' + rs(m.licence_fee) + ' + ' + rs(m.recurring_amount) + ' ' + every(m.cycle_months);
+    if (s.plan === 'recurring') return T('recurring') + ' ' + rs(m.recurring_amount) + ' ' + every(m.cycle_months);
+    return T(s.plan) + (s.periods > 1 ? ' × ' + s.periods : '');
+  }
+  function planTextEn(s) {          // the printed receipt is always in English
+    var m = s.meta || {}, ev = function (x) { x = +x || 1; return x === 1 ? 'every month' : x === 12 ? 'every year' : 'every ' + x + ' months'; };
+    if (s.plan === 'trial') return 'Trial';
+    if (s.plan === 'licence') return 'One-time licence · ' + s.periods + ' months';
+    if (s.plan === 'licence_rec') return 'Licence ' + rs(m.licence_fee) + ' + ' + rs(m.recurring_amount) + ' ' + ev(m.cycle_months);
+    if (s.plan === 'recurring') return 'Recurring ' + rs(m.recurring_amount) + ' ' + ev(m.cycle_months);
+    return (s.plan === 'monthly' ? 'Monthly' : 'Yearly') + (s.periods > 1 ? ' × ' + s.periods : '');
+  }
+  function words(n) {
+    n = Math.round(parseFloat(n) || 0);
+    var a = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'],
+        b = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+    function two(x) { return x < 20 ? a[x] : b[Math.floor(x / 10)] + (x % 10 ? ' ' + a[x % 10] : ''); }
+    function three(x) { return (x >= 100 ? a[Math.floor(x / 100)] + ' Hundred' + (x % 100 ? ' ' : '') : '') + (x % 100 ? two(x % 100) : ''); }
+    if (!n) return 'Zero';
+    var out = [], cr = Math.floor(n / 1e7), lk = Math.floor(n / 1e5) % 100, th = Math.floor(n / 1e3) % 100, rest = n % 1000;
+    if (cr) out.push(three(cr) + ' Crore'); if (lk) out.push(two(lk) + ' Lakh'); if (th) out.push(two(th) + ' Thousand'); if (rest) out.push(three(rest));
+    return out.join(' ');
+  }
+  // printable receipt (also used by the Super Admin panel)
+  function receiptHtml(d) {
+    var e = esc, sup = d.seller || {}, bal = Math.max(0, (parseFloat(d.total) || 0) - (parseFloat(d.paidTotal) || 0));
+    var logo = new URL('logo/mark.svg', ROOT).href;
+    return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Receipt R-' + e(String(d.no).padStart(4, '0')) + '</title><style>' +
+      '*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#0f172a;background:#fff}' +
+      '.r{max-width:720px;margin:24px auto;border:1px solid #e2e8f0;border-radius:14px;overflow:hidden}' +
+      '.h{display:flex;align-items:center;gap:14px;padding:20px 24px;background:#1e1b4b;color:#fff}.h img{width:46px;height:46px;border-radius:12px;background:#fff;padding:4px}' +
+      '.h b{font-size:20px;display:block}.h span{font-size:12px;color:#c7d2fe}.h .t{margin-left:auto;text-align:right}.h .t b{font-size:16px;letter-spacing:.12em}' +
+      '.b{padding:20px 24px}.g{display:grid;grid-template-columns:1fr 1fr;gap:14px 24px;margin-bottom:16px}.k{font-size:10.5px;text-transform:uppercase;letter-spacing:.1em;color:#64748b;font-weight:700}.v{font-size:14px;font-weight:600;margin-top:2px}' +
+      'table{width:100%;border-collapse:collapse;margin-top:6px}th,td{padding:10px;border-bottom:1px solid #e2e8f0;text-align:left;font-size:13.5px}th{background:#f8fafc;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#64748b}td.n{text-align:right;font-weight:700}' +
+      '.amt{margin-top:16px;padding:14px 16px;border-radius:12px;background:#eef2ff;display:flex;justify-content:space-between;align-items:center}.amt b{font-size:22px;color:#3730a3}.w{font-size:12.5px;color:#475569;margin-top:8px}' +
+      '.s{display:flex;gap:16px;flex-wrap:wrap;margin-top:12px;font-size:12.5px;color:#475569}.s b{color:#0f172a}' +
+      '.f{padding:14px 24px;border-top:1px solid #e2e8f0;font-size:11.5px;color:#64748b;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}' +
+      '@media print{.r{border:0;margin:0;max-width:none}}</style></head><body><div class="r">' +
+      '<div class="h"><img src="' + e(logo) + '" alt=""><div><b>' + e(sup.company || 'NexGen Softwares') + '</b><span>' + e([sup.phone || sup.whatsapp, sup.email].filter(Boolean).join(' · ')) + '</span></div>' +
+      '<div class="t"><b>RECEIPT</b><span>No. R-' + e(String(d.no).padStart(4, '0')) + '<br>' + e(dmy(d.date)) + '</span></div></div>' +
+      '<div class="b"><div class="g"><div><div class="k">Received from</div><div class="v">' + e(d.company || '') + '</div><div class="w">' + e([d.name !== d.company ? d.name : '', d.code ? 'Customer ID ' + d.code : '', d.gstin ? 'GSTIN ' + d.gstin : ''].filter(Boolean).join(' · ')) + '</div></div>' +
+      '<div><div class="k">Payment mode</div><div class="v">' + e(d.mode || '—') + '</div><div class="w">' + e(d.ref ? 'Ref / UTR: ' + d.ref : '') + '</div></div></div>' +
+      '<table><thead><tr><th>Software</th><th>Plan</th><th>Period</th><th style="text-align:right">Amount</th></tr></thead><tbody><tr><td><b>' + e(d.software) + '</b></td><td>' + e(d.plan) + '</td><td>' + e(dmy(d.start) + ' → ' + dmy(d.end)) + '</td><td class="n">' + e(rs(d.amount)) + '</td></tr></tbody></table>' +
+      '<div class="amt"><span>Amount received</span><b>' + e(rs(d.amount)) + '</b></div><div class="w">Rupees ' + e(words(d.amount)) + ' Only</div>' +
+      '<div class="s"><span>Plan total <b>' + e(rs(d.total)) + '</b></span><span>Paid till now <b>' + e(rs(d.paidTotal)) + '</b></span><span>Balance <b>' + e(rs(bal)) + '</b></span></div></div>' +
+      '<div class="f"><span>Thank you for choosing ' + e(sup.company || 'NexGen Softwares') + '.</span><span>Computer generated receipt – no signature needed.</span></div></div></body></html>';
+  }
+  function printHtml(html) {
+    var f = document.createElement('iframe'); f.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0';
+    document.body.appendChild(f);
+    var d = f.contentWindow.document; d.open(); d.write(html); d.close();
+    setTimeout(function () { try { f.contentWindow.focus(); f.contentWindow.print(); } catch (e) { } setTimeout(function () { f.remove(); }, 4000); }, 500);
+  }
+  function waLinkTo(num, text) { var d = String(num || '').replace(/\D/g, ''); if (d.length === 10) d = '91' + d; return 'https://wa.me/' + d + '?text=' + encodeURIComponent(text); }
+  var panel = null;
+  function openPanel(title, html) {
+    mount(); if (panel) panel.remove();
+    panel = el('<div class="nx-ov"><div class="nx-box"><div class="nx-hd"><b>' + esc(title) + '</b><button class="nx-x" aria-label="Close">×</button></div><div class="nx-bd">' + html + '</div></div></div>');
+    panel.querySelector('.nx-x').onclick = closePanel;
+    panel.onclick = function (ev) { if (ev.target === panel) closePanel(); };
+    return panel;
+  }
+  function closePanel() { if (panel) { panel.remove(); panel = null; } }
+  function loadLicence() {
+    var s = readSession();
+    var tok = s && s.expires_at && s.expires_at * 1000 > Date.now() + 15000 ? Promise.resolve(s) : freshSession();
+    return tok.then(function (ss) {
+      if (!ss) throw new Error('login');
+      return fetch(SB + '/rest/v1/rpc/my_licence', { method: 'POST', headers: { apikey: KEY, Authorization: 'Bearer ' + ss.access_token, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_app: APP }) })
+        .then(function (r) { if (!r.ok) throw new Error('http ' + r.status); return r.json(); });
+    });
+  }
+  function openLicence() {
+    var p = openPanel(T('licence'), '<p class="nx-mut">' + esc(T('loading')) + '</p>');
+    loadLicence().then(function (d) {
+      if (!panel || panel !== p) return;
+      var bd = p.querySelector('.nx-bd');
+      if (d.role === 'super_admin') { bd.innerHTML = '<p class="nx-mut">' + esc(T('demo')) + '</p>'; return; }
+      var a = d.app || {}, left = +a.days_left, st = a.state || 'expired', sub = (d.subs || [])[0] || {};
+      var total = 0; if (a.start_date && a.end_date) total = (Date.parse(a.end_date) - Date.parse(a.start_date)) / 864e5 + 1;
+      var pct = total > 0 ? Math.max(0, Math.min(100, (left + 1) / total * 100)) : 0;
+      var cur = (d.subs || []).filter(function (x) { return x.start_date <= a.end_date && x.end_date >= a.start_date; })[0] || sub;
+      var html = '<div class="nx-hero ' + (st === 'expired' ? 'bad' : left <= (a.remind_days || 8) ? 'warn' : 'ok') + '"><div><span class="nx-st">' + esc(T(st === 'trial' ? 'trial' : st === 'expired' ? 'expired' : 'active')) + '</span>' +
+        '<b>' + (st === 'expired' ? esc(T('expired')) : left <= 0 ? esc(T('lastDay')) : left + ' ' + esc(T(left === 1 ? 'dayLeft' : 'daysLeft'))) + '</b>' +
+        '<span>' + esc(d.software || NAME) + '</span></div><div class="nx-bar"><i style="width:' + pct.toFixed(1) + '%"></i></div></div>' +
+        '<div class="nx-grid"><div><span>' + esc(T('plan')) + '</span><b>' + esc(cur.plan ? planText(cur) : '—') + '</b></div>' +
+        '<div><span>' + esc(T('valid')) + '</span><b>' + esc(a.start_date ? dmy(a.start_date) + ' → ' + dmy(a.end_date) : '—') + '</b></div>';
+      if (d.role === 'customer') {
+        html += '<div><span>' + esc(T('price')) + '</span><b>' + esc(cur.amount != null ? rs(cur.amount) : '—') + '</b></div>' +
+          '<div><span>' + esc(T('paid')) + '</span><b>' + esc(cur.paid != null ? rs(cur.paid) : '—') + '</b></div>';
+        var dues = (d.subs || []).filter(function (x) { return +x.balance > 0; });
+        if (dues.length) html += '<div class="nx-due"><span>' + esc(T('balance')) + '</span><b>' + esc(rs(dues.reduce(function (t, x) { return t + +x.balance; }, 0))) + '</b>' + (dues[0].due_date ? '<em>' + esc(T('by')) + ' ' + esc(dmy(dues[0].due_date)) + '</em>' : '') + '</div>';
+      }
+      html += '</div>';
+      if (d.role === 'customer') {
+        html += '<h4>' + esc(T('receipts')) + '</h4>' + ((d.payments || []).length ? '<div class="nx-list">' + d.payments.map(function (x, i) {
+          return '<div class="nx-it"><div><b>' + esc(T('receipt')) + ' R-' + esc(String(x.receipt_no).padStart(4, '0')) + '</b><span>' + esc(dmy(x.paid_on)) + ' · ' + esc(planText(x)) + (x.mode ? ' · ' + esc(x.mode) : '') + '</span></div>' +
+            '<b class="nx-amt">' + esc(rs(x.amount)) + '</b><button class="nx-btn" data-r="' + i + '">' + esc(T('view')) + '</button></div>'; }).join('') + '</div>'
+          : '<p class="nx-mut">' + esc(T('noReceipts')) + '</p>');
+        if ((d.subs || []).length > 1) html += '<h4>' + esc(T('history')) + '</h4><div class="nx-list">' + d.subs.map(function (x) {
+          return '<div class="nx-it"><div><b>' + esc(planText(x)) + '</b><span>' + esc(dmy(x.start_date) + ' → ' + dmy(x.end_date)) + '</span></div><b class="nx-amt">' + esc(rs(x.amount)) + '</b></div>'; }).join('') + '</div>';
+      } else html += '<p class="nx-mut">' + esc(T('staff')) + '</p>';
+      var sp = d.support || {};
+      if (sp.whatsapp) html += '<a class="nx-cta" target="_blank" rel="noopener" href="' + esc(waLinkTo(sp.whatsapp, T('renewMsg') + ' ' + (d.software || NAME) + ' – ' + ((d.customer || {}).company || '') + ' (' + ((d.customer || {}).code || '') + ')')) + '">' + esc(T('renew')) + '</a>';
+      bd.innerHTML = html;
+      Array.prototype.forEach.call(bd.querySelectorAll('[data-r]'), function (b) {
+        b.onclick = function () {
+          var x = d.payments[+b.dataset.r], c = d.customer || {};
+          var r = { no: x.receipt_no, date: x.paid_on, company: c.company, name: c.name, code: c.code, gstin: c.gstin, mode: x.mode, ref: x.ref, software: d.software || NAME,
+            plan: planTextEn(x), start: x.start_date, end: x.end_date, amount: x.amount, total: x.total, paidTotal: x.paid_total, seller: sp };
+          showReceipt(r);
+        };
+      });
+    }).catch(function () { if (panel === p) p.querySelector('.nx-bd').innerHTML = '<p class="nx-mut">' + esc(T('err')) + '</p>'; });
+  }
+  function showReceipt(r) {
+    var html = receiptHtml(r);
+    var p = openPanel(T('receipt') + ' R-' + String(r.no).padStart(4, '0'), '<iframe class="nx-rcpt" title="Receipt"></iframe><div class="nx-row"><button class="nx-btn ghost" data-b>' + esc(T('back')) + '</button><button class="nx-btn" data-p>' + esc(T('print')) + '</button></div>');
+    var f = p.querySelector('.nx-rcpt'); f.srcdoc = html;
+    p.querySelector('[data-p]').onclick = function () { printHtml(html); };
+    p.querySelector('[data-b]').onclick = openLicence;
+  }
+  function openHelp() {
+    var p = openPanel(T('help'), '<p class="nx-mut">' + esc(T('loading')) + '</p>');
+    var draw = function (sp, cust) {
+      if (!panel || panel !== p) return;
+      sp = sp || {}; cust = cust || {};
+      var msg = T('helpMsg') + ' ' + NAME + (cust.company ? ' – ' + cust.company : '') + (cust.code ? ' (' + cust.code + ')' : '');
+      var rows = '';
+      if (sp.whatsapp) rows += '<a class="nx-hl wa" target="_blank" rel="noopener" href="' + esc(waLinkTo(sp.whatsapp, msg)) + '"><i>💬</i><span><b>' + esc(T('whatsapp')) + '</b>' + esc(sp.whatsapp) + '</span></a>';
+      if (sp.phone || sp.whatsapp) rows += '<a class="nx-hl" href="tel:' + esc(String(sp.phone || sp.whatsapp).replace(/[^\d+]/g, '')) + '"><i>📞</i><span><b>' + esc(T('call')) + '</b>' + esc(sp.phone || sp.whatsapp) + '</span></a>';
+      if (sp.email) rows += '<a class="nx-hl" href="mailto:' + esc(sp.email) + '?subject=' + encodeURIComponent(msg) + '"><i>✉️</i><span><b>' + esc(T('email')) + '</b>' + esc(sp.email) + '</span></a>';
+      p.querySelector('.nx-bd').innerHTML = '<div class="nx-help"><img src="' + esc(new URL('logo/mark.svg', ROOT).href) + '" alt=""><div><span>' + esc(T('helpIntro')) + ' ' + esc(NAME) + '?</span><b>' + esc(T('contact')) + ' ' + esc(sp.company || 'NexGen Softwares') + '</b></div></div>' +
+        (rows ? '<div class="nx-hls">' + rows + '</div>' : '<p class="nx-mut">' + esc(T('notSet')) + '</p>');
+    };
+    loadLicence().then(function (d) { draw(d.support, d.customer); }).catch(function () {
+      fetch(SB + '/rest/v1/settings?select=company_name,support_email,support_mobile,support_phone&id=eq.1', { headers: { apikey: KEY } }).then(function (r) { return r.json(); })
+        .then(function (a) { var s = a && a[0] || {}; draw({ company: s.company_name, email: s.support_email, whatsapp: s.support_mobile, phone: s.support_phone }); })
+        .catch(function () { if (panel === p) p.querySelector('.nx-bd').innerHTML = '<p class="nx-mut">' + esc(T('err')) + '</p>'; });
+    });
+  }
+  // softwares without a menu entry of their own get one small "?" button (Licence + Help Desk)
+  var helpBtn = null;
+  function showHelpButton() {
+    if (helpBtn || ds.help === 'menu' || APP === 'portal' || APP === 'admin') return;
+    mount();
+    helpBtn = el('<button class="nx-q" title="Licence & Help Desk">?</button>');
+    helpBtn.onclick = function () {
+      var p = openPanel(NAME, '<div class="nx-hls"><button class="nx-hl" data-l><i>🪪</i><span><b>' + esc(T('licence')) + '</b></span></button><button class="nx-hl" data-h><i>🛟</i><span><b>' + esc(T('help')) + '</b></span></button></div>');
+      p.querySelector('[data-l]').onclick = openLicence; p.querySelector('[data-h]').onclick = openHelp;
+    };
+  }
+
+  if (!GATE) { window.NexGenShell = { app: APP, install: install, afterLogin: afterLogin, update: hardUpdate, guard: startGuard, deviceClaim: deviceClaim, deviceArgs: deviceArgs, receiptHtml: receiptHtml, printHtml: printHtml }; return; }
 
   /* ===================================================================
      LICENCE GATE
@@ -543,7 +750,7 @@
             var c = me.customer || {};
             afterLogin({ tenant_code: c.tenant_code || c.code, company: c.company_name || c.name });
             if (app.days_left <= (app.remind_days || 8)) soonBar(app);
-            startGuard();
+            startGuard(); showHelpButton();
             return;
           }
           ls(LIC, null);
@@ -564,9 +771,10 @@
         if (me.role === 'super_admin') showSwitch('admin');
         else if (me.role === 'customer' && (me.apps || []).length > 1) showSwitch('apps');
         if (me.role === 'customer' || me.role === 'member') startGuard();
+        if (me.role !== 'none') showHelpButton();
       });
     }).catch(function () { });
-    window.NexGenShell = { app: APP, ownLogin: true, session: freshSession, guard: startGuard, deviceClaim: deviceClaim, deviceArgs: deviceArgs, toPanel: function () { location.href = ROOT + 'portal/?app=' + encodeURIComponent(APP); },
+    window.NexGenShell = { app: APP, ownLogin: true, session: freshSession, guard: startGuard, deviceClaim: deviceClaim, deviceArgs: deviceArgs, licence: openLicence, help: openHelp, receiptHtml: receiptHtml, printHtml: printHtml, toPanel: function () { location.href = ROOT + 'portal/?app=' + encodeURIComponent(APP); },
       install: install, afterLogin: afterLogin, checkLatest: checkLatest, update: hardUpdate };
     return;
   }
@@ -577,5 +785,5 @@
   document.addEventListener('visibilitychange', function () {
     if (!document.hidden && Date.now() - lastCheck > 30 * 60 * 1000) { lastCheck = Date.now(); check(); }
   });
-  window.NexGenShell = { app: APP, session: freshSession, guard: startGuard, deviceClaim: deviceClaim, deviceArgs: deviceArgs, toPanel: function () { location.href = ROOT + 'portal/'; }, logout: logoutAll, install: install, afterLogin: afterLogin, checkLatest: checkLatest, update: hardUpdate };
+  window.NexGenShell = { app: APP, session: freshSession, guard: startGuard, deviceClaim: deviceClaim, deviceArgs: deviceArgs, licence: openLicence, help: openHelp, receiptHtml: receiptHtml, printHtml: printHtml, toPanel: function () { location.href = ROOT + 'portal/'; }, logout: logoutAll, install: install, afterLogin: afterLogin, checkLatest: checkLatest, update: hardUpdate };
 })();
