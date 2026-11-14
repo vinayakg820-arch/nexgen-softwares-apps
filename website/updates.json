@@ -2,6 +2,24 @@
  "note": "Release history shown in NexGen Super Admin → Updates. Newest first. Add one entry for every website ZIP.",
  "updates": [
   {
+   "site": "2.4.1",
+   "date": "2026-11-14",
+   "title": "Delete customer: Block or Delete permanently",
+   "apps": [
+    {
+     "code": "portal",
+     "name": "NexGen Super Admin",
+     "from": "2.3.0",
+     "to": "2.3.1",
+     "notes": [
+      "Delete customer now asks: Keep (Block) or Delete permanently",
+      "Delete permanently works even when the customer has data – type the Customer ID to confirm; login, team, subscriptions, payments and software data are removed (good for demo / test customers)"
+     ]
+    }
+   ],
+   "how": "Super Admin: “New update available” → Update now."
+  },
+  {
    "site": "2.4.0",
    "date": "2026-11-14",
    "title": "Ready to sell: licence plans, part payments, reminders, device limit",

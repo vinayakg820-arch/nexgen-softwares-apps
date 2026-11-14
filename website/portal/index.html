@@ -6,7 +6,7 @@
 <title>NexGen Softwares</title>
 <meta name="theme-color" content="#1e1b4b">
 <link rel="manifest" href="manifest.json?v=203">
-<script src="../nexgen-app.js" data-app="portal" data-version="2.3.0" data-name="NexGen Softwares" data-icon="../icon-192.png?v=211" data-color="#4f46e5"></script>
+<script src="../nexgen-app.js" data-app="portal" data-version="2.3.1" data-name="NexGen Softwares" data-icon="../icon-192.png?v=211" data-color="#4f46e5"></script>
 <link rel="icon" href="../logo/mark.svg" type="image/svg+xml"><link rel="icon" href="../favicon-32.png" sizes="32x32">
 <link rel="apple-touch-icon" href="../apple-touch-icon.png">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
@@ -254,7 +254,7 @@ pre.code{background:#0f172a;color:#e2e8f0;padding:14px;border-radius:12px;overfl
 /* =====================================================================
    NexGen Softwares – Super Admin & Customer Portal
    ===================================================================== */
-const APP_VERSION = '2.3.0';
+const APP_VERSION = '2.3.1';
 const AREA = /\/admin\//.test(location.pathname) ? 'admin' : 'portal';
 const SUPABASE_URL = 'https://nqqbduqqiwpaixmrweef.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_eKTOE3ywBI9ye02QFVDmvg_231pdTTJ';
@@ -1413,9 +1413,35 @@ function viewCustomer(id) {
     if (!await confirmBox(to === 'blocked' ? `Block <b>${esc(c.company_name || c.name)}</b>? They will not be able to log in.` : `Unblock <b>${esc(c.company_name || c.name)}</b>?`, { danger: to === 'blocked', okText: to === 'blocked' ? 'Block' : 'Unblock' })) return;
     try { await run(sb.rpc('admin_set_customer_status', { p_customer_id: c.id, p_status: to })); toast(to === 'blocked' ? 'Customer blocked' : 'Customer unblocked'); refresh(); } catch (e) { toast(errMsg(e), 'err'); }
   };
-  $('#cDel').onclick = async () => {
-    if (!await confirmBox(`Delete <b>${esc(c.company_name || c.name)}</b> and all their subscription history? This cannot be undone.<br><br><span class="small muted">Tip: “Block” keeps the history.</span>`, { danger: true, okText: 'Delete permanently' })) return;
-    try { await run(sb.rpc('admin_delete_customer', { p_customer_id: c.id })); toast('Customer deleted'); await loadAll(); location.hash = '#/customers'; } catch (e) { toast(errMsg(e), 'err'); }
+  $('#cDel').onclick = () => deleteCustomer(c);
+}
+// Delete: choose Block (keep everything) or Delete permanently (type the Customer ID). Use permanent delete for demo / test customers.
+function deleteCustomer(c) {
+  const subs = S.subs.filter(s => s.customer_id === c.id), pays = S.payments.filter(p => p.customer_id === c.id);
+  const m = openModal({
+    title: 'Delete customer?',
+    body: `<p style="margin-top:0"><b>${esc(c.company_name || c.name)}</b> (${esc(c.customer_code)}) · ${subs.length} subscription${subs.length === 1 ? '' : 's'} · ${money(pays.reduce((a, p) => a + +p.amount, 0))} received</p>
+      <div class="card card-pad" style="margin-bottom:12px;border:2px solid var(--line)">
+        <b><i class="fas fa-ban" style="color:var(--warn)"></i> Keep – Block the customer</b>
+        <p class="small muted" style="margin:4px 0 10px">They cannot log in. All data, subscriptions and payments stay. You can unblock later.</p>
+        <button class="btn ghost" id="dlBlock" ${c.status === 'blocked' ? 'disabled' : ''}>${c.status === 'blocked' ? 'Already blocked' : 'Block instead'}</button></div>
+      <div class="card card-pad" style="border:2px solid #fecaca;background:#fff7f7">
+        <b><i class="fas fa-trash" style="color:var(--bad)"></i> Delete permanently</b>
+        <p class="small muted" style="margin:4px 0 10px">Removes the login, team logins, subscriptions, payments and <b>all data inside their softwares</b>. It also leaves your customer count and revenue. Cannot be undone – best for demo / test customers.</p>
+        <div class="field" style="margin-bottom:10px"><label>Type the Customer ID <b class="mono">${esc(c.customer_code)}</b> to confirm</label><input class="inp mono" id="dlCode" autocomplete="off" style="text-transform:uppercase"></div>
+        <button class="btn danger" id="dlGo" disabled><i class="fas fa-trash"></i> Delete permanently</button></div>`,
+    foot: `<button class="btn ghost" data-close>Cancel</button>`
+  });
+  $('#dlCode', m).oninput = e => { $('#dlGo', m).disabled = e.target.value.trim().toUpperCase() !== String(c.customer_code).toUpperCase(); };
+  $('#dlBlock', m).onclick = async () => {
+    try { await run(sb.rpc('admin_set_customer_status', { p_customer_id: c.id, p_status: 'blocked' })); m.close(); toast('Customer blocked – data kept'); refresh(); } catch (e) { toast(errMsg(e), 'err'); }
+  };
+  $('#dlGo', m).onclick = async () => {
+    const btn = $('#dlGo', m); btn.disabled = true;
+    try {
+      await run(sb.rpc('admin_delete_customer', { p_customer_id: c.id, p_force: true, p_confirm: $('#dlCode', m).value.trim() }));
+      m.close(); toast('Customer deleted permanently'); await loadAll(); location.hash = '#/customers';
+    } catch (e) { btn.disabled = false; toast(errMsg(e), 'err'); }
   };
 }
 async function editCustomer(c) {
