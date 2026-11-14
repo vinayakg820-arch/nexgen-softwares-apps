@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8"><script src="../nexgen-app.js" data-app="billing" data-version="2.9.1" data-splash="#boot-splash" data-name="Shubh Laxmi Billing Software" data-icon="sl-mark-256.png?v=200" data-color="#4f46e5"></script>
+    <meta charset="UTF-8"><script src="../nexgen-app.js" data-app="billing" data-version="2.9.2" data-splash="#boot-splash" data-name="Shubh Laxmi Billing Software" data-icon="sl-mark-256.png?v=200" data-color="#4f46e5"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#4f46e5">
     <script>
@@ -5153,7 +5153,7 @@
         });
 
         // --- APP VERSION & UPDATE TRACKING ---
-        const APP_VERSION = "2.9.1";
+        const APP_VERSION = "2.9.2";
         const UPDATE_DESC = "फोनवरही आता सगळे मेन्यू: खालच्या पट्टीत \"मेन्यू\" दाबा. आवृत्ती क्रमांक आणि अपडेट तपासणी - मेन्यू व सेटिंग्जमध्ये.";
 
         // --- AUTH & USER ROLES LOGIC ---
@@ -15168,6 +15168,115 @@
 })();
 </script>
 
+<script id="sl-v292">
+/* =====================================================================
+   SHUBH LAXMI 2.9.2 · Service with its own price on the bill
+   A registered service (e.g. "Flex Banner") can get a different size /
+   description, cost price and sale price right while billing. After the
+   bill is saved it is added to Services as a new service, so next time it
+   can be picked directly. (Products keep their fixed stock, so this is only
+   for services.)
+   ===================================================================== */
+(function () {
+    const $ = id => document.getElementById(id);
+    const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const num = v => { const n = parseFloat(v); return isNaN(n) ? 0 : n; };
+    const toast = (m, k) => { if (typeof showToast === 'function') showToast(m, k); };
+    let pending = null;      // custom values waiting for "Add Row"
+
+    const css = document.createElement('style');
+    css.textContent = `#inv-svc-custom{margin-top:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;border:1px dashed #a5b4fc;background:#eef2ff;border-radius:14px;padding:8px 10px;font-size:11.5px;font-weight:700;color:#3730a3}
+      #inv-svc-custom button{border:0;background:#4f46e5;color:#fff;border-radius:999px;padding:6px 12px;font-size:11.5px;font-weight:800;cursor:pointer}
+      #inv-svc-custom .on{color:#047857}
+      html.dark #inv-svc-custom{background:#1e1b4b;border-color:#4338ca;color:#c7d2fe}`;
+    document.head.appendChild(css);
+
+    const curService = () => { const v = ($('inv-prod-id') || {}).value || ''; if (!v.startsWith('s_')) return null; return (typeof services !== 'undefined' && services) ? services[parseInt(v.slice(2), 10)] : null; };
+    function drawChip() {
+        const s = curService(), host = $('inv-stock-display');
+        let chip = $('inv-svc-custom');
+        if (!s) { if (chip) chip.remove(); pending = null; return; }
+        if (!chip) { chip = document.createElement('div'); chip.id = 'inv-svc-custom'; host.parentElement.appendChild(chip); }
+        const mine = pending && String(pending.sid) === String(s.id);
+        chip.innerHTML = mine
+            ? `<span class="on">✓ <span>Custom for this bill</span>:</span> <span class="no-i18n">${esc(pending.desc || '-')} · ₹${num(pending.price).toFixed(2)}</span> <button type="button">Change</button>`
+            : `<span>Different size / price for this bill?</span> <button type="button">✎ Custom size / price</button>`;
+        chip.querySelector('button').onclick = () => openDialog(s);
+    }
+    function openDialog(s) {
+        const old = $('svc-cu'); if (old) old.remove();
+        const p = pending && String(pending.sid) === String(s.id) ? pending : { desc: ($('inv-desc') || {}).value || s.desc || '', cost: s.cost || '', price: ($('inv-mrp') || {}).value || s.price || '', saveNew: true };
+        const d = document.createElement('div'); d.id = 'svc-cu'; d.className = 'mny-modal';
+        d.innerHTML = `<div class="mny-mbox" style="max-width:460px"><h3 class="mny-h" style="font-size:17px"><span class="no-i18n">${esc(s.name)}</span> – <span>custom for this bill</span></h3>
+            <p class="mny-mut" style="margin:-4px 0 12px">The name stays the same on the bill. Change the size / details and the prices only for this customer.</p>
+            <label class="mny-lbl">Size / description</label><input class="mny-in" id="scu-desc" value="${esc(p.desc)}" placeholder="e.g. 8 x 5 ft, star flex, with eyelets">
+            <div style="display:flex;gap:10px;margin-top:10px"><div style="flex:1"><label class="mny-lbl">Cost price (₹)</label><input class="mny-in" id="scu-cost" type="number" min="0" step="0.01" value="${esc(p.cost)}" placeholder="Your cost"></div>
+              <div style="flex:1"><label class="mny-lbl">Sale price (₹)</label><input class="mny-in" id="scu-price" type="number" min="0" step="0.01" value="${esc(p.price)}" placeholder="Customer price"></div></div>
+            <label style="display:flex;gap:8px;align-items:center;margin-top:12px;font-size:12.5px;font-weight:700"><input type="checkbox" id="scu-save" ${p.saveNew !== false ? 'checked' : ''}> <span>Add it to Services as a new service after the bill is saved</span></label>
+            <p class="mny-mut" style="margin:6px 0 0" id="scu-hint"></p>
+            <div class="mny-actions"><button class="mny-btn" data-a="x">Cancel</button>${pending && String(pending.sid) === String(s.id) ? '<button class="mny-btn" data-a="clr">Use normal price</button>' : ''}<button class="mny-btn pri" data-a="ok">Apply</button></div></div>`;
+        document.body.appendChild(d);
+        const W = w => (typeof window.slT === 'function' ? window.slT(w) : w);
+        const hint = () => { const ds = $('scu-desc').value.trim(); $('scu-hint').innerHTML = $('scu-save').checked ? '<span>' + esc(W('New service')) + '</span>: <span class="no-i18n">' + esc(s.name + (ds ? ' – ' + ds : ' (custom)')) + '</span>' : ''; };
+        ['scu-desc', 'scu-save'].forEach(i => { $(i).oninput = hint; $(i).onchange = hint; }); hint();
+        d.onclick = e => { if (e.target === d) d.remove(); };
+        d.querySelector('[data-a="x"]').onclick = () => d.remove();
+        const clr = d.querySelector('[data-a="clr"]'); if (clr) clr.onclick = () => { pending = null; if ($('inv-mrp')) $('inv-mrp').value = s.price || 0; if ($('inv-desc')) $('inv-desc').value = s.desc || ''; d.remove(); drawChip(); };
+        d.querySelector('[data-a="ok"]').onclick = () => {
+            const price = $('scu-price').value.trim(), cost = $('scu-cost').value.trim();
+            if (price === '' || num(price) < 0) { toast('Enter the sale price', 'error'); $('scu-price').focus(); return; }
+            pending = { sid: s.id, name: s.name, desc: $('scu-desc').value.trim(), cost: cost === '' ? '' : num(cost), price: num(price), saveNew: $('scu-save').checked };
+            if ($('inv-mrp')) $('inv-mrp').value = pending.price;
+            if ($('inv-desc')) $('inv-desc').value = pending.desc;
+            if ($('inv-qty') && !$('inv-qty').value) $('inv-qty').value = 1;
+            d.remove(); drawChip();
+            toast('Custom price set – tap Add Row', 'success');
+        };
+    }
+    function wrap(name, after, before) {
+        const f = window[name]; if (typeof f !== 'function' || f.__v292) return false;
+        const w = function () { let ctx; try { if (before) ctx = before.apply(this, arguments); } catch (e) { console.warn(e); } const r = f.apply(this, arguments); try { if (after) after(r, ctx); } catch (e) { console.warn(e); } return r; };
+        w.__v292 = true; Object.keys(f).forEach(k => { w[k] = f[k]; }); window[name] = w; return true;
+    }
+    function hookAll() {
+        let ok = true;
+        ok = wrap('autoFillProduct', () => { const s = curService(); if (!s || (pending && String(pending.sid) !== String(s.id))) pending = null; drawChip(); }) && ok;
+        // Add Row: the new line gets this bill's own cost + remembers what to register
+        ok = wrap('addItemToInvoice', (r, before) => {
+            if (!pending || !Array.isArray(invoiceItems) || invoiceItems.length <= before) return;
+            const it = invoiceItems[invoiceItems.length - 1];
+            if (!it.isService || String(it.id) !== String(pending.sid)) return;
+            if (pending.cost !== '') it.costPrice = num(pending.cost);
+            it.desc = pending.desc || it.desc;
+            it.customSvc = { name: pending.name, desc: pending.desc, cost: pending.cost, price: pending.price, saveNew: pending.saveNew };
+            pending = null; drawChip(); if (typeof syncInvoicePreview === 'function') syncInvoicePreview();
+        }, () => Array.isArray(invoiceItems) ? invoiceItems.length : 0) && ok;
+        // bill saved: register the custom services (once, no duplicates)
+        ok = wrap('finalizeSaleSubmission', (r, before) => {
+            const custom = before.items.filter(it => it.customSvc && it.customSvc.saveNew);
+            if (!custom.length) return;
+            const saved = (Array.isArray(saleBills) ? saleBills : []).some(b => String(b.no || '') === before.no);
+            if (!saved || typeof services === 'undefined') return;
+            let added = 0;
+            custom.forEach((it, i) => {
+                const c = it.customSvc, nm = (c.name + (c.desc ? ' – ' + c.desc : ' (custom)')).slice(0, 120);
+                if (services.some(s => String(s.name || '').trim().toLowerCase() === nm.toLowerCase())) return;
+                services.push({ id: Date.now() + i, name: nm, desc: c.desc || '', cost: c.cost === '' ? '' : String(c.cost), price: String(c.price), fromBill: before.no });
+                added++;
+            });
+            if (!added) return;
+            services.sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' }));
+            localStorage.setItem('registeredServices', JSON.stringify(services));
+            if (typeof renderServiceList === 'function') try { renderServiceList(); } catch (e) { }
+            setTimeout(() => toast(added === 1 ? 'Added to Services as a new service' : added + ' new services added to Services', 'success'), 1200);
+        }, () => ({ items: (Array.isArray(invoiceItems) ? invoiceItems : []).map(x => x), no: (($('inv-no') || {}).value || '---') })) && ok;
+        return ok;
+    }
+    const boot = () => { if (!hookAll()) return setTimeout(boot, 300); };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
+})();
+</script>
+
 <script id="sl-i18n">
 
 /* =====================================================================
@@ -15180,6 +15289,25 @@
 (function () {
     const ROWS = [
         /* ---- 2.9.1: stock testing, pending due, bill items, backup merge ---- */
+        ["Different size / price for this bill?", "इस बिल के लिए अलग साइज़ / रेट?", "या बिलासाठी वेगळी साइज / किंमत?"],
+        ["✎ Custom size / price", "✎ अलग साइज़ / रेट", "✎ वेगळी साइज / किंमत"],
+        ["Custom for this bill", "इस बिल के लिए अलग", "या बिलासाठी वेगळं"],
+        ["Change", "बदलें", "बदला"],
+        ["custom for this bill", "इस बिल के लिए अलग", "या बिलासाठी वेगळं"],
+        ["The name stays the same on the bill. Change the size / details and the prices only for this customer.", "बिल पर नाम वही रहेगा। सिर्फ इस ग्राहक के लिए साइज़ / जानकारी और रेट बदलें।", "बिलावर नाव तेच राहतं. फक्त या ग्राहकासाठी साइज / माहिती आणि किंमत बदला."],
+        ["Size / description", "साइज़ / विवरण", "साइज / वर्णन"],
+        ["Cost price (₹)", "लागत (₹)", "खरेदी किंमत (₹)"],
+        ["Sale price (₹)", "बिक्री रेट (₹)", "विक्री किंमत (₹)"],
+        ["Your cost", "आपकी लागत", "तुमची किंमत"],
+        ["Customer price", "ग्राहक का रेट", "ग्राहकाची किंमत"],
+        ["e.g. 8 x 5 ft, star flex, with eyelets", "जैसे 8 x 5 फुट, स्टार फ्लेक्स, आईलेट के साथ", "उदा. 8 x 5 फूट, स्टार फ्लेक्स, आयलेटसह"],
+        ["Add it to Services as a new service after the bill is saved", "बिल सेव होने के बाद इसे नई सर्विस के रूप में जोड़ें", "बिल सेव्ह झाल्यावर हे नवीन सर्व्हिस म्हणून जोडा"],
+        ["Use normal price", "सामान्य रेट लगाएं", "नेहमीची किंमत वापरा"],
+        ["Apply", "लागू करें", "लागू करा"],
+        ["Enter the sale price", "बिक्री रेट डालें", "विक्री किंमत टाका"],
+        ["Custom price set – tap Add Row", "अलग रेट सेट हुआ – Add Row दबाएं", "वेगळी किंमत सेट झाली – Add Row दाबा"],
+        ["New service","नई सर्विस","नवीन सर्व्हिस"],
+        ["Added to Services as a new service", "नई सर्विस के रूप में जुड़ गया", "नवीन सर्व्हिस म्हणून जोडलं"],
         ["Question, e.g. Display Test", "सवाल, जैसे Display Test", "प्रश्न, उदा. Display Test"],
         ["Group (optional), e.g. Ports Check", "ग्रुप (वैकल्पिक), जैसे Ports Check", "गट (ऐच्छिक), उदा. Ports Check"],
         ["Answer", "जवाब", "उत्तर"],

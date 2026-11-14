@@ -2,6 +2,32 @@
  "note": "Release history shown in NexGen Super Admin → Updates. Newest first. Add one entry for every website ZIP.",
  "updates": [
   {
+   "site": "2.5.1",
+   "date": "2026-11-14",
+   "title": "Shubh Laxmi 2.9.2 – custom size / price for a service on the bill; DEMO label",
+   "apps": [
+    {
+     "code": "billing",
+     "name": "Shubh Laxmi Billing Software",
+     "from": "2.9.1",
+     "to": "2.9.2",
+     "notes": [
+      "Billing a service (e.g. Flex Banner): “✎ Custom size / price” sets the size / description, cost price and sale price for this bill only",
+      "After the bill is saved it is added to Services as a new service (e.g. “Flex Banner – 8 x 5 ft”), so next time it is ready to pick",
+      "Profit uses the custom cost price"
+     ]
+    },
+    {
+     "code": "all",
+     "name": "All softwares",
+     "notes": [
+      "Super Admin opening a software sees a “DEMO shop · Use customer login” button – to open your own customer subscription in the same browser"
+     ]
+    }
+   ],
+   "how": "Every customer gets it inside Shubh Laxmi: “New update available” → Update. No new APK needed."
+  },
+  {
    "site": "2.5.0",
    "date": "2026-11-14",
    "title": "Shubh Laxmi 2.9.1 – Stock Testing, pending due, easy bill editing, backup merge",

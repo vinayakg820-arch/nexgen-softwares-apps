@@ -114,6 +114,7 @@
     '.ver{position:fixed;right:6px;bottom:calc(env(safe-area-inset-bottom,0px) + 6px);pointer-events:auto;display:flex;align-items:center;gap:5px;' +
     'background:rgba(255,255,255,.92);color:#334155;border:1px solid #e2e8f0;border-radius:999px;padding:3px 9px 3px 7px;font-size:11px;font-weight:700;' +
     'box-shadow:0 2px 8px rgba(15,23,42,.12);cursor:pointer;opacity:.85}' +
+    '.demo{position:fixed;right:6px;bottom:calc(env(safe-area-inset-bottom,0px) + 70px);pointer-events:auto;background:#fef3c7;color:#92400e;border:1px solid #fcd34d;border-radius:999px;padding:5px 11px;font:700 11px/1.2 system-ui,sans-serif;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.12)}.demo b{background:#b45309;color:#fff;border-radius:6px;padding:1px 5px;margin-right:4px;font-size:10px}' +
     '.sw{position:fixed;right:6px;bottom:calc(env(safe-area-inset-bottom,0px) + 32px);pointer-events:auto;display:flex;align-items:center;gap:6px;background:#1e1b4b;color:#fff;border:0;border-radius:999px;' +
     'padding:6px 12px 6px 9px;font:700 12px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;box-shadow:0 4px 14px rgba(15,23,42,.3);cursor:pointer;opacity:.92}.sw:hover{opacity:1}.sw b{font-size:14px;line-height:1}' +
     '.ver:hover{opacity:1}.ver i{width:8px;height:8px;border-radius:50%;background:#94a3b8;display:inline-block}' +
@@ -221,6 +222,7 @@
      a customer with more than one software goes back to "My softwares" – no logout / login needed. */
   var swEl = null;
   if (!GATE) { try { sessionStorage.removeItem('ngs-switch'); } catch (e) { } }
+  var demoEl = null;
   function showSwitch(kind) {
     try { if (kind) sessionStorage.setItem('ngs-switch', kind); else kind = sessionStorage.getItem('ngs-switch'); } catch (e) { }
     if (!GATE || !kind) return;
@@ -229,6 +231,16 @@
     var admin = kind === 'admin';
     swEl = el('<button class="sw" title="' + (admin ? 'Back to the Super Admin panel' : 'Open your other softwares') + '"><b>&#8644;</b>' + (admin ? 'Super Admin' : 'My softwares') + '</button>');
     swEl.setAttribute('data-k', kind);
+    // the super admin sees his own DEMO shop here. A customer login of his own (a real subscription)
+    // can be opened right here: this browser holds one login at a time.
+    if (admin && !demoEl) {
+      demoEl = el('<button class="demo" title="This is your demo shop. Tap to log in here with a customer Email ID instead."><b>DEMO</b> shop · Use customer login</button>');
+      demoEl.onclick = function () {
+        if (!confirm('This is your Super Admin DEMO shop.\n\nLog out of Super Admin in this browser and log in with a customer Email ID (for example your own subscription)?\n\nTip: keep Super Admin in this window and use a separate Chrome profile or Incognito window for the customer login – then both stay open.')) return;
+        try { localStorage.removeItem(STORE); Object.keys(localStorage).forEach(function (k) { if (k.indexOf('ngs-lic-') === 0) localStorage.removeItem(k); }); sessionStorage.removeItem('ngs-switch'); } catch (e) { }
+        location.href = ROOT + 'portal/?app=' + encodeURIComponent(APP);
+      };
+    }
     swEl.onclick = function () {
       var url = ROOT + (admin ? 'admin/' : 'portal/');
       // installed on a computer as its own app: keep this app open and show the panel in the browser
