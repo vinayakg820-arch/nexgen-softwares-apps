@@ -2,6 +2,27 @@
  "note": "Release history shown in NexGen Super Admin → Updates. Newest first. Add one entry for every website ZIP.",
  "updates": [
   {
+   "site": "2.5.0",
+   "date": "2026-11-14",
+   "title": "Shubh Laxmi 2.9.1 – Stock Testing, pending due, easy bill editing, backup merge",
+   "apps": [
+    {
+     "code": "billing",
+     "name": "Shubh Laxmi Billing Software",
+     "from": "2.9.0",
+     "to": "2.9.1",
+     "notes": [
+      "Stock Testing (was Laptop Testing): admin makes any test – questions, answers and which answers mean OK – for each product category",
+      "New bill: the party's previous pending amount shows in red right under Select Party",
+      "Edit bill: clean “Items in this bill” list with Edit / Delete; the bill preview scrolls sideways on a laptop",
+      "Sale report Excel: new column Item Disc (%) next to Item Disc (Rs)",
+      "Backup upload: Merge with my data (or Replace); bill numbers continue from the backup's series, e.g. SE-045 → SE-046"
+     ]
+    }
+   ],
+   "how": "Every customer gets it inside Shubh Laxmi: “New update available” → Update. No new APK needed."
+  },
+  {
    "site": "2.4.4",
    "date": "2026-11-14",
    "title": "Stays logged in on the phone after refresh",

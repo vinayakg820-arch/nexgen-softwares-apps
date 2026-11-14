@@ -4,7 +4,7 @@
 
    NOTE: bump SW_VERSION on every release - a byte change here is what makes
    the browser notice that a new version of the app is available. */
-const SW_VERSION = '2.9.0';
+const SW_VERSION = '2.9.1';
 
 importScripts('sw-push.js');
 

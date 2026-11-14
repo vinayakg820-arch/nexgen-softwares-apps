@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8"><script src="../nexgen-app.js" data-app="billing" data-version="2.9.0" data-splash="#boot-splash" data-name="Shubh Laxmi Billing Software" data-icon="sl-mark-256.png?v=200" data-color="#4f46e5"></script>
+    <meta charset="UTF-8"><script src="../nexgen-app.js" data-app="billing" data-version="2.9.1" data-splash="#boot-splash" data-name="Shubh Laxmi Billing Software" data-icon="sl-mark-256.png?v=200" data-color="#4f46e5"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#4f46e5">
     <script>
@@ -1717,7 +1717,7 @@
             <a class="not-engineer admin-only" data-v="view-purchase-stock" onclick="showView('view-purchase-stock')"><i data-lucide="download"></i>Entry</a>
             <a class="not-engineer" data-v="view-sales-purchase" onclick="showView('view-sales-purchase')"><i data-lucide="repeat"></i>Transactions</a>
             <a class="not-engineer" data-v="view-stock-management" onclick="showView('view-stock-management')"><i data-lucide="boxes"></i>Inventory</a>
-            <a class="eng-tile" data-v="view-stock-qc" onclick="showView('view-stock-qc')"><i data-lucide="clipboard-check"></i>Laptop Testing</a>
+            <a class="eng-tile" data-v="view-stock-qc" onclick="showView('view-stock-qc')"><i data-lucide="clipboard-check"></i>Stock Testing</a>
             <a class="not-engineer admin-only" data-v="view-reports" onclick="showView('view-reports')"><i data-lucide="bar-chart-3"></i>Analysis</a>
             <a class="not-engineer" data-v="view-backup" onclick="showView('view-backup')"><i data-lucide="refresh-cw"></i>Data Sync</a>
             <a class="not-engineer admin-only" data-v="view-user-management" onclick="showView('view-user-management')"><i data-lucide="shield-check"></i>Access Control</a>
@@ -1805,7 +1805,7 @@
                         <span class="tx"><b>Stock Management</b><i>Inventory</i></span></div>
                     <div class="sl-tile tile-card eng-tile" onclick="showView('view-stock-qc')">
                         <span class="ic" style="background:#e0f2fe;color:#0284c7"><i data-lucide="clipboard-check"></i></span>
-                        <span class="tx"><b>Stock QC</b><i>Laptop Testing</i></span></div>
+                        <span class="tx"><b>Stock QC</b><i>Stock Testing</i></span></div>
                     <div class="sl-tile tile-card not-engineer admin-only" onclick="showView('view-reports')">
                         <span class="ic" style="background:#fef3c7;color:#d97706"><i data-lucide="bar-chart-3"></i></span>
                         <span class="tx"><b>Reports</b><i>Analysis</i></span></div>
@@ -1853,7 +1853,10 @@
                         <div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center"><i data-lucide="clipboard-check" class="w-5 h-5"></i></div>
                         <h3 class="text-slate-800 font-extrabold text-xl">Stock QC</h3>
                     </div>
+                    <div class="flex items-center gap-2 flex-wrap">
+                    <button onclick="sqcManageTests()" class="admin-only px-5 py-2.5 bg-white border border-blue-200 text-blue-700 hover:bg-blue-50 font-bold rounded-full shadow-sm active:scale-95 transition-all text-sm flex items-center gap-2"><i data-lucide="sliders-horizontal" class="w-4 h-4"></i> Manage tests</button>
                     <button onclick="openStockQCModal()" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-full shadow-lg active:scale-95 transition-all text-sm flex items-center gap-2"><i data-lucide="plus" class="w-4 h-4"></i> New QC Test</button>
+                    </div>
                 </div>
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 w-full mb-6 px-1">
                     <div class="bg-white border border-slate-200 rounded-3xl p-4 shadow-sm"><p class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">Ready to import</p><p id="sqc-stat-tested" class="text-2xl font-black text-emerald-600 mt-1">0</p></div>
@@ -4179,13 +4182,14 @@
             </div>
             <div class="space-y-5">
                 <div>
-                    <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest bg-slate-50 p-2 rounded mb-3">Step 1 · Laptop Model</h4>
+                    <div id="sqc-tpl-box" class="mb-4"></div>
+                    <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest bg-slate-50 p-2 rounded mb-3">Step 1 · Product Model</h4>
                     <div class="flex gap-2 mb-3">
                         <button id="sqc-tab-stock" type="button" onclick="sqcSetModelMode('stock')" class="flex-1 py-2.5 rounded-xl font-bold text-xs border">From Stock</button>
                         <button id="sqc-tab-new" type="button" onclick="sqcSetModelMode('new')" class="flex-1 py-2.5 rounded-xl font-bold text-xs border">+ New Model</button>
                     </div>
                     <div id="sqc-mode-stock">
-                        <input type="text" id="sqc-model-search" oninput="sqcRenderModels()" placeholder="Search laptop in stock (name / brand)..." class="input-field text-sm">
+                        <input type="text" id="sqc-model-search" oninput="sqcRenderModels()" placeholder="Search product in stock (name / brand)..." class="input-field text-sm">
                         <div id="sqc-model-results" class="mt-2 max-h-44 overflow-y-auto custom-scrollbar space-y-1.5"></div>
                     </div>
                     <div id="sqc-mode-new" class="hidden grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -4233,12 +4237,12 @@
                 <h2 class="text-xl font-extrabold text-slate-800 flex items-center gap-2"><i data-lucide="download" class="w-5 h-5 text-emerald-600"></i> Import stock from Engineer</h2>
                 <button onclick="toggleModal('sqc-import-modal', false)" class="p-2 bg-slate-100 text-slate-500 rounded-full hover:bg-slate-200 transition-colors"><i data-lucide="x" class="w-4 h-4"></i></button>
             </div>
-            <div id="sqc-import-empty" class="hidden py-10 text-center text-slate-400 font-medium">No tested laptops are waiting to be imported.</div>
+            <div id="sqc-import-empty" class="hidden py-10 text-center text-slate-400 font-medium">No tested items are waiting to be imported.</div>
             <div id="sqc-import-main" class="flex-1">
                 <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Dealer (stock received from)</label>
                 <select id="sqc-import-dealer" onchange="sqcImportRender()" class="input-field text-sm font-bold mt-1 cursor-pointer"></select>
                 <div class="flex items-center justify-between mt-4 mb-2">
-                    <span class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">Tested laptops</span>
+                    <span class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">Tested items</span>
                     <label class="text-xs font-bold text-indigo-600 cursor-pointer flex items-center gap-2"><input type="checkbox" id="sqc-import-all" onchange="sqcImportToggleAll(this.checked)"> Select all</label>
                 </div>
                 <div id="sqc-import-list" class="space-y-2 max-h-72 overflow-y-auto custom-scrollbar"></div>
@@ -4376,7 +4380,7 @@
         const SB_ANON = "sb_publishable_eKTOE3ywBI9ye02QFVDmvg_231pdTTJ";
         const ADMIN_EMAIL = "vinayakg820@gmail.com";
         const USER_EMAIL_DOMAIN = "users.nexgen.invalid";
-        const SB_KEYS = ['registeredParties','registeredProducts','registeredServices','registeredPurchaseBills','registeredSaleBills','registeredDamagedStock','companyProfile','companyExpenses','registeredCategories','registeredPlacements','registeredSaleReturns','registeredPurchaseReturns','registeredReplacements','qualityChecks','registeredEstimates','engineerQC','userPerms','billTemplate','billAccent','waMsgTpl','waMsgTplMr','waMsgLang','moneyAccounts','moneyReceipts','moneyTransfers','remindTpl','remindLog','receiptSeq','ewaySettings','docSettings','recurringBills'];
+        const SB_KEYS = ['registeredParties','registeredProducts','registeredServices','registeredPurchaseBills','registeredSaleBills','registeredDamagedStock','companyProfile','companyExpenses','registeredCategories','registeredPlacements','registeredSaleReturns','registeredPurchaseReturns','registeredReplacements','qualityChecks','registeredEstimates','engineerQC','userPerms','billTemplate','billAccent','waMsgTpl','waMsgTplMr','waMsgLang','moneyAccounts','moneyReceipts','moneyTransfers','remindTpl','remindLog','receiptSeq','ewaySettings','docSettings','recurringBills','stockTests'];
 
         const sb = window.supabase.createClient(SB_URL, SB_ANON, { auth: { persistSession: true, autoRefreshToken: true, storage: window.localStorage, storageKey: 'nexgen-portal-auth' } });
         let sbEmail = '', sbProfile = null, sbReady = false, sbSuppress = false, sbFlushing = false, sbTimer = null;
@@ -4412,7 +4416,7 @@
         }
         function sbQueue(k, v) {
             if (sbProfile && sbProfile.role === 'engineer' && k !== 'engineerQC') return;
-            if (sbProfile && sbProfile.role !== 'admin' && k === 'userPerms') return;   // only the shop admin changes user rights
+            if (sbProfile && sbProfile.role !== 'admin' && (k === 'userPerms' || k === 'stockTests')) return;   // only the shop admin changes user rights and tests
             sbPending.set(k, v);
             sbBadge('saving');
             clearTimeout(sbTimer);
@@ -5149,7 +5153,7 @@
         });
 
         // --- APP VERSION & UPDATE TRACKING ---
-        const APP_VERSION = "2.9.0";
+        const APP_VERSION = "2.9.1";
         const UPDATE_DESC = "फोनवरही आता सगळे मेन्यू: खालच्या पट्टीत \"मेन्यू\" दाबा. आवृत्ती क्रमांक आणि अपडेट तपासणी - मेन्यू व सेटिंग्जमध्ये.";
 
         // --- AUTH & USER ROLES LOGIC ---
@@ -5405,7 +5409,7 @@
                 { k: 'damaged',        v: 'view-damaged-stock',      t: 'खराब माल नोंद' },
                 { k: 'replacement',    v: 'view-replacement',        t: 'Replacement' },
                 { k: 'barcode',        v: 'view-barcode-generator',  t: 'बारकोड प्रिंट' },
-                { k: 'qc',             v: 'view-stock-qc',           t: 'Stock QC (लॅपटॉप टेस्टिंग)' } ] },
+                { k: 'qc',             v: 'view-stock-qc',           t: 'Stock QC (स्टॉक टेस्टिंग)' } ] },
             { grp: 'पार्टी व हिशोब · Accounts', items: [
                 { k: 'party',          v: 'view-party-details',      t: 'पार्टी तपशील' },
                 { k: 'ledger',         v: 'view-party-ledger',       t: 'पार्टी खातेवही' },
@@ -10396,7 +10400,7 @@
         }
 
         function exportSaleReport(brandFilter = null, monthFilter = 'all', yearFilter = 'all') {
-            let csv = "Invoice No,Date,Customer,Product Name,Brand,Serial No,HSN,Qty,MRP,Sale Rate,Item Disc(Rs),GST%,Net Rate,Bill Addl Disc\n";
+            let csv = "Invoice No,Date,Customer,Product Name,Brand,Serial No,HSN,Qty,MRP,Sale Rate,Item Disc(Rs),Item Disc(%),GST%,Net Rate,Bill Addl Disc\n";
             let totalQty = 0; let totalValue = 0;
             
             let hasData = false;
@@ -10409,13 +10413,13 @@
                     hasData = true;
                     totalQty += item.qty;
                     totalValue += item.net;
-                    csv += `"${bill.no}","${bill.date}","${bill.customer}","${item.name}","${item.brand}","${item.serial || ''}","${item.hsn}","${item.qty}","${item.actualMrp || 0}","${item.mrp}","${item.itemDisc || 0}","${item.gstR}","${item.net}","${bill.addlDisc || 0}"\n`;
+                    csv += `"${bill.no}","${bill.date}","${bill.customer}","${item.name}","${item.brand}","${item.serial || ''}","${item.hsn}","${item.qty}","${item.actualMrp || 0}","${item.mrp}","${item.itemDisc || 0}","${(parseFloat(item.actualMrp) > 0 ? (parseFloat(item.itemDisc || 0) / parseFloat(item.actualMrp) * 100) : 0).toFixed(2)}","${item.gstR}","${item.net}","${bill.addlDisc || 0}"\n`;
                 });
             });
 
             if(!hasData) return showToast("No records found for selected filters", "error");
 
-            csv += `\n"TOTALS","","","","","","","${totalQty}","","","","","${totalValue.toFixed(2)}",""\n`;
+            csv += `\n"TOTALS","","","","","","","${totalQty}","","","","","","${totalValue.toFixed(2)}",""\n`;
             
             let filename = `Sale_Report`;
             if(brandFilter) filename += `_${brandFilter.replace(/[^a-zA-Z0-9]/g, '_')}`;
@@ -10879,8 +10883,35 @@
                 { id: 'office', label: '8. MS Office', opts: ['Done', 'Not Done'] },
                 { id: 'warranty', label: '9. Warranty Sticker', opts: ['Done', 'Not Done'] } ] }
         ];
-        const SQC_ALL = SQC_TESTS.flatMap(g => g.items);
-        let sqcMode = 'stock', sqcPicked = null, sqcEditId = null;
+        const SQC_ALL = SQC_TESTS.flatMap(g => g.items);     // the old fixed laptop test (records made before 2.9.1)
+        let sqcMode = 'stock', sqcPicked = null, sqcEditId = null, sqcTpl = null;
+
+        /* ---- Stock Testing: the shop admin makes the tests (questions + answers, and which answers mean OK) ---- */
+        function sqcDefaultTpl() {
+            const qs = [];
+            SQC_TESTS.forEach(g => g.items.forEach(t => {
+                if (t.battery) qs.push({ id: 'batteryPct', label: 'Battery Health', group: g.group, type: 'number', min: 75, unit: '%' });
+                else qs.push({ id: t.id, label: t.label.replace(/^\d+\.\s+/, ''), group: g.group.replace(/^\d+\.\s+/, ''), type: 'choice', options: t.opts.map(o => ({ t: o, ok: ['Ok', 'Done', 'Working'].includes(o) })) });
+            }));
+            return { id: 'tpl_laptop', name: 'Laptop Testing', category: 'laptop', questions: qs };
+        }
+        function sqcTpls() {
+            let a = null; try { a = JSON.parse(localStorage.getItem('stockTests')); } catch (e) { }
+            return Array.isArray(a) && a.length ? a : [sqcDefaultTpl()];
+        }
+        function sqcSaveTpls(a) { localStorage.setItem('stockTests', JSON.stringify(a)); }
+        // questions of a saved record: its own copy, or the old laptop test
+        function sqcRecQs(r) {
+            if (r && r.tpl && Array.isArray(r.tpl.questions)) return r.tpl.questions;
+            return SQC_ALL.map(t => t.battery ? { id: 'battery', label: 'Battery Status', type: 'choice', options: t.opts.map(o => ({ t: o, ok: o === 'Ok' })), legacyPct: true }
+                : { id: t.id, label: t.label.replace(/^\d+\.\s+/, ''), type: 'choice', options: t.opts.map(o => ({ t: o, ok: ['Ok', 'Done', 'Working'].includes(o) })) });
+        }
+        function sqcIsOk(q, v) {
+            if (v === '' || v == null) return null;
+            if (q.type === 'number') { const n = parseFloat(v); return isNaN(n) ? null : (q.min === '' || q.min == null || n >= parseFloat(q.min)); }
+            const o = (q.options || []).find(x => x.t === v); return o ? !!o.ok : false;
+        }
+        const sqcCatOk = (tpl, p) => { const c = String((tpl && tpl.category) || '').trim().toLowerCase(); return !c || String(p.category || '').toLowerCase().includes(c); };
 
         const sqcMe = () => sessionStorage.getItem('loggedInUser') || 'admin';
         const sqcMyName = () => { const id = sqcMe(); if (id === 'admin') return 'Admin'; const u = (appUsers || []).find(x => x.id === id); return u ? u.name : id; };
@@ -10924,7 +10955,7 @@
                 return true;
             }).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
             if (!list.length) {
-                body.innerHTML = '<tr><td colspan="7" class="px-8 py-12 text-center text-slate-400 font-medium">No QC records yet. Tap "New QC Test" to test a laptop.</td></tr>';
+                body.innerHTML = '<tr><td colspan="7" class="px-8 py-12 text-center text-slate-400 font-medium">No QC records yet. Tap "New QC Test" to test an item.</td></tr>';
                 return;
             }
             body.innerHTML = list.map(r => `
@@ -10949,25 +10980,21 @@
             sqcEditId = editId || null;
             sqcPicked = null;
             ['sqc-model-search', 'sqc-new-name', 'sqc-new-brand', 'sqc-new-desc', 'sqc-dealer', 'sqc-serial'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
-            document.getElementById('sqc-tests').innerHTML = SQC_TESTS.map(g => `
-                <div><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">${g.group}</p>
-                <div class="grid grid-cols-2 ${g.items.length > 3 ? '' : 'md:grid-cols-3'} gap-3">
-                    ${g.items.map(t => t.battery ? `
-                        <div class="col-span-2 flex gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100">
-                            <div class="w-1/3"><label class="text-[10px] font-bold text-slate-500 uppercase ml-1">4. Battery Health (%)</label><input type="number" id="sqc-battery-pct" oninput="sqcBatteryChange()" placeholder="e.g. 80" class="input-field text-sm font-bold mt-1 bg-white"></div>
-                            <div class="flex-1"><label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Battery Status</label>
-                            <select id="sqc-t-battery" onchange="sqcEval()" class="input-field text-sm font-bold mt-1 cursor-pointer bg-white"><option value="">Select</option>${t.opts.map(o => `<option value="${o}">${o}</option>`).join('')}</select></div>
-                        </div>` : `
-                        <div><label class="text-[10px] font-bold text-slate-500 uppercase ml-1">${t.label}</label>
-                        <select id="sqc-t-${t.id}" onchange="sqcEval()" class="input-field text-sm font-bold mt-1 cursor-pointer"><option value="">Select</option>${t.opts.map(o => `<option value="${o}">${o}</option>`).join('')}</select></div>`).join('')}
-                </div></div>`).join('');
+            const tpls = sqcTpls(), rec0 = sqcEditId ? sqcLive().find(x => x.id === sqcEditId) : null;
+            if (rec0 && rec0.tpl) sqcTpl = tpls.find(x => x.id === rec0.tpl.id) || rec0.tpl;
+            else if (rec0) sqcTpl = sqcDefaultTpl();
+            else sqcTpl = tpls.find(x => x.id === sessionStorage.getItem('sqc-last-tpl')) || tpls[0];
+            const tb = document.getElementById('sqc-tpl-box');
+            if (tb) tb.innerHTML = `<label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Test</label>
+                <select id="sqc-tpl" ${rec0 ? 'disabled' : ''} onchange="sqcPickTpl(this.value)" class="input-field text-sm font-bold mt-1 cursor-pointer no-i18n">${tpls.map(x => `<option value="${sbEsc(x.id)}" ${sqcTpl && x.id === sqcTpl.id ? 'selected' : ''}>${sbEsc(x.name)} (${(x.questions || []).length})</option>`).join('')}${sqcTpl && !tpls.some(x => x.id === sqcTpl.id) ? `<option selected>${sbEsc(sqcTpl.name)}</option>` : ''}</select>`;
+            sqcRenderTests();
             const title = document.getElementById('sqc-modal-title');
             const rec = sqcEditId ? sqcLive().find(x => x.id === sqcEditId) : null;
             if (title) title.innerHTML = '<i data-lucide="clipboard-check" class="w-6 h-6 text-blue-600"></i> ' + (rec ? 'Edit Stock QC Test' : 'New Stock QC Test');
             if (rec) {
                 const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v == null ? '' : v; };
-                set('sqc-dealer', rec.dealer); set('sqc-serial', rec.serial); set('sqc-battery-pct', rec.batteryPct);
-                SQC_ALL.forEach(t => set('sqc-t-' + t.id, (rec.tests || {})[t.id] || ''));
+                set('sqc-dealer', rec.dealer); set('sqc-serial', rec.serial);
+                sqcTpl.questions.forEach((q, i) => set('sqc-q-' + i, q.id === 'batteryPct' && !rec.tpl ? (rec.batteryPct || '') : ((rec.tests || {})[q.id] == null ? '' : (rec.tests || {})[q.id])));
                 const inStock = rec.productId && (products || []).some(x => String(x.id) === String(rec.productId));
                 if (inStock) {
                     sqcPicked = { productId: rec.productId, model: rec.model, brand: rec.brand || '', isNew: false };
@@ -10984,6 +11011,24 @@
             toggleModal('stock-qc-modal', true);
             if (window.lucide) lucide.createIcons();
         }
+        function sqcPickTpl(id) {
+            sqcTpl = sqcTpls().find(x => x.id === id) || sqcTpl; sessionStorage.setItem('sqc-last-tpl', sqcTpl.id);
+            if (sqcPicked && !sqcCatOk(sqcTpl, (products || []).find(p => String(p.id) === String(sqcPicked.productId)) || {})) sqcPicked = null;
+            sqcRenderTests(); sqcRenderModels(); sqcUpdatePicked(); sqcEval();
+        }
+        function sqcRenderTests() {
+            const qs = (sqcTpl && sqcTpl.questions) || [], groups = [];
+            qs.forEach((q, i) => { const g = (q.group || '').trim(); let G = groups.find(x => x.g === g); if (!G) groups.push(G = { g, items: [] }); G.items.push([q, i]); });
+            document.getElementById('sqc-tests').innerHTML = qs.length ? groups.map(G => `
+                <div>${G.g ? `<p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 no-i18n">${sbEsc(G.g)}</p>` : ''}
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    ${G.items.map(([q, i]) => q.type === 'number' ? `
+                        <div><label class="text-[10px] font-bold text-slate-500 uppercase ml-1 no-i18n">${sbEsc(q.label)}${q.unit ? ' (' + sbEsc(q.unit) + ')' : ''}</label>
+                        <input type="number" id="sqc-q-${i}" oninput="sqcEval()" placeholder="${q.min !== '' && q.min != null ? '≥ ' + sbEsc(q.min) : ''}" class="input-field text-sm font-bold mt-1 bg-white"></div>` : `
+                        <div><label class="text-[10px] font-bold text-slate-500 uppercase ml-1 no-i18n">${sbEsc(q.label)}</label>
+                        <select id="sqc-q-${i}" onchange="sqcEval()" class="input-field text-sm font-bold mt-1 cursor-pointer"><option value="">Select</option>${(q.options || []).map(o => `<option value="${sbEsc(o.t)}" class="no-i18n">${sbEsc(o.t)}</option>`).join('')}</select></div>`).join('')}
+                </div></div>`).join('') : '<p class="text-sm font-semibold text-slate-400 p-4 bg-slate-50 rounded-2xl">This test has no questions yet. Admin: tap “Manage tests”.</p>';
+        }
         function sqcSetModelMode(mode) {
             sqcMode = mode;
             document.getElementById('sqc-mode-stock').classList.toggle('hidden', mode !== 'stock');
@@ -10997,9 +11042,9 @@
         function sqcRenderModels() {
             const q = (document.getElementById('sqc-model-search').value || '').toLowerCase();
             const box = document.getElementById('sqc-model-results');
-            const laptops = (products || []).filter(p => /laptop/i.test(p.category || ''));
+            const laptops = (products || []).filter(p => sqcCatOk(sqcTpl, p));
             const rows = laptops.filter(p => !q || `${p.name} ${p.brand}`.toLowerCase().includes(q)).slice(0, 40);
-            if (!laptops.length) { box.innerHTML = '<p class="text-xs text-slate-400 font-semibold p-3 bg-slate-50 rounded-xl">No laptop models are registered in stock yet. Use "+ New Model".</p>'; return; }
+            if (!laptops.length) { box.innerHTML = '<p class="text-xs text-slate-400 font-semibold p-3 bg-slate-50 rounded-xl">No products of this category are in stock yet. Use "+ New Model".</p>'; return; }
             box.innerHTML = rows.length ? rows.map(p => `
                 <button type="button" data-pid="${p.id}" onclick="sqcPickModel(this.dataset.pid)" class="w-full text-left px-4 py-3 rounded-xl border ${sqcPicked && String(sqcPicked.productId) === String(p.id) ? 'border-blue-500 bg-blue-50' : 'border-slate-200 hover:border-blue-300'} transition-colors flex items-center justify-between gap-3">
                     <span><span class="font-bold text-slate-800 text-sm">${sbEsc(p.name)}</span><span class="block text-[11px] text-slate-500">${sbEsc(p.brand || '---')}</span></span>
@@ -11033,17 +11078,17 @@
         function sqcEval() {
             const btn = document.getElementById('sqc-register-btn'); if (!btn) return null;
             const model = sqcCurrentModel();
-            const answered = SQC_ALL.filter(t => (document.getElementById('sqc-t-' + t.id) || {}).value).length;
-            const pct = (document.getElementById('sqc-battery-pct') || {}).value;
-            const prog = document.getElementById('sqc-test-progress'); if (prog) prog.textContent = `${answered}/${SQC_ALL.length} done`;
-            const okVals = ['Ok', 'Done', 'Working'];
-            const anyBad = SQC_ALL.some(t => { const v = (document.getElementById('sqc-t-' + t.id) || {}).value; return v && !okVals.includes(v); });
+            const qs = (sqcTpl && sqcTpl.questions) || [];
+            const vals = qs.map((q, i) => ((document.getElementById('sqc-q-' + i) || {}).value || '').trim());
+            const answered = vals.filter(v => v !== '').length;
+            const prog = document.getElementById('sqc-test-progress'); if (prog) prog.textContent = `${answered}/${qs.length} done`;
+            const anyBad = qs.some((q, i) => sqcIsOk(q, vals[i]) === false);
             const dealer = (document.getElementById('sqc-dealer').value || '').trim();
             const serial = (document.getElementById('sqc-serial').value || '').trim();
             const missing = [];
             if (!model) missing.push('model');
-            if (answered < SQC_ALL.length) missing.push('all tests');
-            if (pct === '' || pct === undefined) missing.push('battery %');
+            if (!qs.length) missing.push('a test with questions');
+            if (answered < qs.length) missing.push('all tests');
             if (!dealer) missing.push('dealer');
             if (!serial) missing.push('serial number');
             const hint = document.getElementById('sqc-hint');
@@ -11053,7 +11098,7 @@
                 return null;
             }
             btn.disabled = false;
-            if (anyBad) { btn.className = 'flex-1 py-4 font-bold rounded-2xl shadow-xl active:scale-95 transition-all bg-rose-600 hover:bg-rose-700 text-white'; btn.textContent = sqcEditId ? 'Save changes – Faulty' : 'Register as Faulty'; if (hint) hint.textContent = 'Some tests are not OK, so this laptop will be marked Faulty (it cannot be imported to stock).'; }
+            if (anyBad) { btn.className = 'flex-1 py-4 font-bold rounded-2xl shadow-xl active:scale-95 transition-all bg-rose-600 hover:bg-rose-700 text-white'; btn.textContent = sqcEditId ? 'Save changes – Faulty' : 'Register as Faulty'; if (hint) hint.textContent = 'Some tests are not OK, so this item will be marked Faulty (it cannot be imported to stock).'; }
             else { btn.className = 'flex-1 py-4 font-bold rounded-2xl shadow-xl active:scale-95 transition-all bg-emerald-600 hover:bg-emerald-700 text-white'; btn.textContent = sqcEditId ? '✔ Save changes – All OK' : '✔ All OK – Register as Tested'; if (hint) hint.textContent = 'All tests are OK. ' + (sqcEditId ? 'Saving keeps it available to import in Purchase.' : 'Registering makes it available to import in Purchase.'); }
             return { model, anyBad, dealer, serial };
         }
@@ -11067,13 +11112,15 @@
             const dupQC = sqcLive().some(r => r.id !== sqcEditId && (r.serial || '').toLowerCase() === sNorm);
             const dupStock = (products || []).some(p => (p.serials || []).some(x => String(x).toLowerCase() === sNorm));
             if (!sameSerial && (dupQC || dupStock)) { showToast('This serial number is already registered', 'error'); return; }
-            const tests = {}; SQC_ALL.forEach(t => { tests[t.id] = document.getElementById('sqc-t-' + t.id).value; });
+            const tests = {}; sqcTpl.questions.forEach((q, i) => { tests[q.id] = (document.getElementById('sqc-q-' + i).value || '').trim(); });
+            const tpl = { id: sqcTpl.id, name: sqcTpl.name, category: sqcTpl.category || '', questions: JSON.parse(JSON.stringify(sqcTpl.questions)) };
+            const bp = tests.batteryPct != null ? tests.batteryPct : '';
             const now = Date.now();
             if (orig) {
                 Object.assign(orig, {
                     updatedAt: now, editedAt: now, editedByName: sqcMyName(),
                     productId: ev.model.productId, model: ev.model.model, brand: ev.model.brand, desc: ev.model.desc || orig.desc || '', isNew: ev.model.isNew,
-                    tests, batteryPct: document.getElementById('sqc-battery-pct').value,
+                    tests, tpl, batteryPct: bp,
                     serial: ev.serial, dealer: ev.dealer,
                     status: ev.anyBad ? 'Faulty' : 'Tested'
                 });
@@ -11089,7 +11136,7 @@
                 createdAt: now, updatedAt: now,
                 createdBy: sqcMe(), createdByName: sqcMyName(),
                 productId: ev.model.productId, model: ev.model.model, brand: ev.model.brand, desc: ev.model.desc || '', isNew: ev.model.isNew,
-                tests, batteryPct: document.getElementById('sqc-battery-pct').value,
+                tests, tpl, batteryPct: bp,
                 serial: ev.serial, dealer: ev.dealer,
                 status: ev.anyBad ? 'Faulty' : 'Tested',
                 importedAt: null, importedBy: '', purchaseRef: '', deleted: false
@@ -11101,11 +11148,11 @@
         }
         function sqcViewReport(id) {
             const r = sqcLive().find(x => x.id === id); if (!r) return;
-            const rows = SQC_ALL.map(t => { const v = (r.tests || {})[t.id] || '-'; const ok = ['Ok', 'Done', 'Working'].includes(v);
-                return `<tr><td class="py-2 pr-4 text-xs font-bold text-slate-500">${t.label.replace(/^\d+\.\s*/, '')}${t.battery && r.batteryPct ? ` (${sbEsc(r.batteryPct)}%)` : ''}</td><td class="py-2 text-right"><span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${ok ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}">${sbEsc(v)}</span></td></tr>`; }).join('');
+            const rows = sqcRecQs(r).map(q => { const raw = (r.tests || {})[q.id]; const v = raw == null || raw === '' ? '-' : raw; const ok = sqcIsOk(q, raw) === true;
+                return `<tr><td class="py-2 pr-4 text-xs font-bold text-slate-500 no-i18n">${sbEsc(q.label)}${q.legacyPct && r.batteryPct ? ` (${sbEsc(r.batteryPct)}%)` : ''}</td><td class="py-2 text-right"><span class="no-i18n px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${ok ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}">${sbEsc(v)}${q.type === 'number' && q.unit && v !== '-' ? ' ' + sbEsc(q.unit) : ''}</span></td></tr>`; }).join('');
             document.getElementById('sqc-view-body').innerHTML = `
                 <div class="grid grid-cols-2 gap-3 mb-4 text-sm">
-                    <div class="col-span-2"><p class="text-[10px] font-extrabold uppercase text-slate-400">Model</p><p class="font-bold text-slate-800">${sbEsc(r.model)} <span class="text-slate-400 font-semibold">· ${sbEsc(r.brand || '---')}</span></p></div>
+                    ${r.tpl ? `<div class="col-span-2"><p class="text-[10px] font-extrabold uppercase text-slate-400">Test</p><p class="font-bold text-blue-700 no-i18n">${sbEsc(r.tpl.name)}</p></div>` : ''}<div class="col-span-2"><p class="text-[10px] font-extrabold uppercase text-slate-400">Model</p><p class="font-bold text-slate-800">${sbEsc(r.model)} <span class="text-slate-400 font-semibold">· ${sbEsc(r.brand || '---')}</span></p></div>
                     <div><p class="text-[10px] font-extrabold uppercase text-slate-400">Serial No.</p><p class="font-mono font-bold text-slate-700">${sbEsc(r.serial)}</p></div>
                     <div><p class="text-[10px] font-extrabold uppercase text-slate-400">Status</p><div class="mt-0.5">${sqcBadge(r)}</div></div>
                     <div><p class="text-[10px] font-extrabold uppercase text-slate-400">Dealer</p><p class="font-bold text-slate-700">${sbEsc(r.dealer)}</p></div>
@@ -11165,8 +11212,10 @@
         function sqcFindOrCreateProduct(rec) {
             let p = (products || []).find(x => rec.productId && x.id === rec.productId) || (products || []).find(x => (x.name || '').trim().toLowerCase() === (rec.model || '').trim().toLowerCase());
             if (p) return p;
-            let cat = (categories || []).find(c => /laptop/i.test(c));
-            if (!cat) { cat = 'Laptop'; categories.push(cat); localStorage.setItem('registeredCategories', JSON.stringify(categories)); }
+            const want = String((rec.tpl ? rec.tpl.category : 'laptop') || '').trim();
+            let cat = want ? (categories || []).find(c => String(c).toLowerCase().includes(want.toLowerCase())) : '';
+            if (!cat && want) { cat = want.charAt(0).toUpperCase() + want.slice(1); categories.push(cat); localStorage.setItem('registeredCategories', JSON.stringify(categories)); }
+            cat = cat || '';
             p = { id: Date.now() + Math.floor(Math.random() * 1000), name: rec.model, brand: rec.brand || '', category: cat, placement: '', ean: '', desc: rec.desc || '', hsn: '', mrp: '', purCost: '', salePrice: '', qty: 0, serials: [] };
             products.push(p);
             products.sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' }));
@@ -11200,7 +11249,7 @@
             prodSel.innerHTML = '<option value="">Select Product</option>' + products.map((p, i) => `<option value="${i}">${p.name} (Stock: ${p.qty})</option>`).join('');
             initSearchableDropdown('pur-prod-id');
             const banner = document.getElementById('pur-eng-banner');
-            if (banner) { banner.classList.remove('hidden'); banner.textContent = `Imported from Engineer QC · Dealer: ${dealerName} · ${recs.length} laptop${recs.length > 1 ? 's' : ''}`; }
+            if (banner) { banner.classList.remove('hidden'); banner.textContent = `Imported from Engineer QC · Dealer: ${dealerName} · ${recs.length} item${recs.length > 1 ? 's' : ''}`; }
             toggleModal('sqc-import-modal', false);
             engLoadNextGroup();
         }
@@ -14767,6 +14816,358 @@
 })();
 
 </script>
+<script id="sl-v291">
+/* =====================================================================
+   SHUBH LAXMI 2.9.1
+   1. Stock Testing: Manage tests (admin makes the questions + answers)
+   2. New / edit bill: party's earlier pending amount (red) under "Select Party"
+   3. New / edit bill: clean item list with Edit / Delete (works on laptop + phone)
+   4. Backup: Merge (keeps your data) or Replace, bill numbers continue from the backup
+   ===================================================================== */
+(function () {
+    const $ = id => document.getElementById(id);
+    const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const num = v => { const n = parseFloat(v); return isNaN(n) ? 0 : n; };
+    const money = v => '₹ ' + num(v).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const toast = (m, k) => { if (typeof showToast === 'function') showToast(m, k); };
+    const W = w => (typeof window.slT === 'function' ? window.slT(w) : w);
+    const fmtDate = d => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(d || '')); return m ? `${m[3]}-${m[2]}-${m[1]}` : String(d || ''); };
+
+    const css = document.createElement('style');
+    css.textContent = `
+      /* the live bill can scroll sideways on a laptop, so its Edit / Delete column is always reachable */
+      @media (min-width:1024px){ .bill-preview-col{ overflow-x:auto!important } }
+      .ii-card{background:#fff;border:1px solid #e2e8f0;border-radius:24px;padding:18px 18px 12px;box-shadow:0 1px 2px rgba(15,23,42,.04)}
+      .ii-head{display:flex;align-items:center;justify-content:space-between;gap:8px;border-bottom:1px solid #f1f5f9;padding-bottom:10px;margin-bottom:6px}
+      .ii-head h4{margin:0;font-size:14px;font-weight:800;color:#1e293b}
+      .ii-tag{font-size:10.5px;font-weight:800;padding:4px 10px;border-radius:999px;background:#eef2ff;color:#4338ca;white-space:nowrap}
+      .ii-tag.ed{background:#fef3c7;color:#b45309}
+      .ii-row{display:flex;align-items:center;gap:10px;padding:10px 2px;border-bottom:1px dashed #eef2f7}
+      .ii-row:last-of-type{border-bottom:0}
+      .ii-n{width:24px;height:24px;border-radius:8px;background:#f1f5f9;color:#64748b;font-size:11px;font-weight:800;display:grid;place-items:center;flex:none}
+      .ii-main{flex:1;min-width:0}
+      .ii-main b{display:block;font-size:13px;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .ii-main small{display:block;font-size:11px;color:#64748b;margin-top:1px}
+      .ii-amt{font-size:13px;font-weight:800;color:#0f172a;white-space:nowrap}
+      .ii-btn{width:32px;height:32px;border-radius:10px;border:1px solid #e2e8f0;background:#fff;display:grid;place-items:center;cursor:pointer;flex:none;color:#475569}
+      .ii-btn:hover{border-color:#a5b4fc;color:#4f46e5;background:#eef2ff}
+      .ii-btn.del:hover{border-color:#fecdd3;color:#e11d48;background:#fff1f2}
+      .ii-btn svg{width:15px;height:15px}
+      .ii-empty{font-size:12px;font-weight:600;color:#94a3b8;padding:12px 2px}
+      .ii-foot{display:flex;justify-content:space-between;align-items:center;padding-top:10px;margin-top:4px;border-top:1px solid #f1f5f9;font-size:12px;font-weight:700;color:#64748b}
+      .ii-foot b{font-size:15px;color:#0f172a}
+      #inv-party-due{margin-top:8px;border-radius:14px;padding:10px 12px;background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;font-size:12px;font-weight:700;display:flex;gap:8px;align-items:flex-start}
+      #inv-party-due b.amt{font-size:15px;font-weight:900;color:#dc2626}
+      #inv-party-due .sub{display:block;font-weight:600;color:#991b1b;opacity:.85;margin-top:2px;font-size:11px}
+      html.dark .ii-card{background:#0f172a;border-color:#1e293b} html.dark .ii-head h4,html.dark .ii-main b,html.dark .ii-amt,html.dark .ii-foot b{color:#e2e8f0}
+      html.dark .ii-btn{background:#1e293b;border-color:#334155;color:#cbd5e1} html.dark .ii-n{background:#1e293b}
+      html.dark #inv-party-due{background:#3f1d2b;border-color:#7f1d1d;color:#fecaca} html.dark #inv-party-due b.amt{color:#fca5a5}
+      /* test builder */
+      .tb-q{border:1px solid #e2e8f0;border-radius:16px;padding:12px;margin-bottom:10px;background:#f8fafc}
+      .tb-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+      .tb-row .mny-in{margin:0}
+      .tb-opts{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+      .tb-opt{display:flex;align-items:center;gap:4px;border:1px solid #e2e8f0;background:#fff;border-radius:12px;padding:3px 4px 3px 8px}
+      .tb-opt input{border:0;outline:0;width:110px;font-size:12.5px;font-weight:700;background:transparent;color:#0f172a}
+      .tb-ok{border:0;border-radius:9px;padding:4px 8px;font-size:11px;font-weight:800;cursor:pointer}
+      .tb-ok.y{background:#dcfce7;color:#15803d} .tb-ok.n{background:#fee2e2;color:#b91c1c}
+      .tb-x{border:0;background:transparent;color:#94a3b8;font-size:16px;cursor:pointer;padding:0 4px}
+      .tb-mini{border:1px solid #e2e8f0;background:#fff;border-radius:10px;width:30px;height:30px;cursor:pointer;color:#475569}
+      .tb-list .tb-it{display:flex;align-items:center;gap:10px;padding:12px;border:1px solid #e2e8f0;border-radius:16px;margin-bottom:8px;background:#fff}
+      .tb-list .tb-it b{display:block;font-size:14px;color:#0f172a}
+      html.dark .tb-q{background:#1e293b;border-color:#334155} html.dark .tb-opt,html.dark .tb-list .tb-it{background:#0f172a;border-color:#334155} html.dark .tb-opt input,html.dark .tb-list .tb-it b{color:#e2e8f0}
+    `;
+    document.head.appendChild(css);
+
+    /* ================= 1. MANAGE TESTS ================= */
+    let ED = null;          // template being edited
+    const uid = () => 'q' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    function dlg(id, html, wide) {
+        const old = $(id); if (old) old.remove();
+        const d = document.createElement('div'); d.id = id; d.className = 'mny-modal';
+        d.innerHTML = `<div class="mny-mbox" style="max-width:${wide ? 760 : 560}px;max-height:92vh;display:flex;flex-direction:column">${html}</div>`;
+        document.body.appendChild(d);
+        d.onclick = e => { if (e.target === d) d.remove(); };
+        return d;
+    }
+    window.sqcManageTests = function () {
+        if (typeof currentSessionRole !== 'undefined' && currentSessionRole !== 'admin') { toast('Only the admin can change the tests', 'error'); return; }
+        const list = sqcTpls();
+        const d = dlg('tb-dlg', `<h3 class="mny-h" style="font-size:17px">Manage tests</h3>
+            <p class="mny-mut" style="margin:-4px 0 12px">Make a test for each kind of stock. You decide the questions, the answers, and which answers mean OK.</p>
+            <div class="tb-list" style="overflow-y:auto">${list.map((x, i) => `<div class="tb-it"><div style="flex:1;min-width:0"><b class="no-i18n">${esc(x.name)}</b>
+                <span class="mny-mut"><span class="no-i18n">${(x.questions || []).length}</span> <span>questions</span> · <span>${x.category ? '' : 'Any product'}</span><span class="no-i18n">${x.category ? esc(x.category) : ''}</span></span></div>
+                <button class="mny-btn mny-s" data-ed="${i}">Edit</button><button class="mny-btn mny-s" data-dl="${i}" ${list.length < 2 ? 'disabled' : ''}>Delete</button></div>`).join('')}</div>
+            <div class="mny-actions"><button class="mny-btn" data-a="x">Close</button><button class="mny-btn pri" data-a="new">+ New test</button></div>`);
+        d.querySelector('[data-a="x"]').onclick = () => d.remove();
+        d.querySelector('[data-a="new"]').onclick = () => { d.remove(); openEditor(null); };
+        d.querySelectorAll('[data-ed]').forEach(b => b.onclick = () => { d.remove(); openEditor(+b.dataset.ed); });
+        d.querySelectorAll('[data-dl]').forEach(b => b.onclick = () => {
+            const a = sqcTpls(), x = a[+b.dataset.dl]; if (!x || a.length < 2) return;
+            if (!confirm(`Delete the test "${x.name}"? Records already tested with it stay as they are.`)) return;
+            a.splice(+b.dataset.dl, 1); sqcSaveTpls(a); toast('Test deleted', 'error'); window.sqcManageTests();
+        });
+    };
+    function openEditor(idx) {
+        const a = sqcTpls();
+        ED = idx == null ? { id: 'tpl_' + Date.now().toString(36), name: '', category: '', questions: [{ id: uid(), label: '', group: '', type: 'choice', options: [{ t: 'Ok', ok: true }, { t: 'Not OK', ok: false }] }] }
+                         : JSON.parse(JSON.stringify(a[idx]));
+        ED._idx = idx;
+        drawEditor();
+    }
+    function drawEditor() {
+        const cats = (typeof categories !== 'undefined' && Array.isArray(categories)) ? categories : [];
+        const curCat = String(ED.category || '');
+        const catOpts = `<option value="">Any product</option>` + cats.map(c => `<option value="${esc(c)}" class="no-i18n" ${String(c).toLowerCase() === curCat.toLowerCase() ? 'selected' : ''}>${esc(c)}</option>`).join('')
+            + (curCat && !cats.some(c => String(c).toLowerCase() === curCat.toLowerCase()) ? `<option value="${esc(curCat)}" class="no-i18n" selected>${esc(curCat)}</option>` : '');
+        const qHtml = ED.questions.map((q, i) => `<div class="tb-q" data-q="${i}">
+            <div class="tb-row"><span class="ii-n no-i18n">${i + 1}</span>
+              <input class="mny-in" style="flex:1;min-width:160px" data-f="label" placeholder="Question, e.g. Display Test" value="${esc(q.label)}">
+              <select class="mny-in" style="width:auto" data-f="type"><option value="choice" ${q.type !== 'number' ? 'selected' : ''}>Options</option><option value="number" ${q.type === 'number' ? 'selected' : ''}>Number</option></select>
+              <button class="tb-mini" data-mv="-1" title="Move up" ${i === 0 ? 'disabled' : ''}>↑</button><button class="tb-mini" data-mv="1" title="Move down" ${i === ED.questions.length - 1 ? 'disabled' : ''}>↓</button><button class="tb-mini" data-rm title="Delete question">🗑</button></div>
+            <div class="tb-row" style="margin-top:8px"><input class="mny-in" style="flex:1;min-width:140px" data-f="group" placeholder="Group (optional), e.g. Ports Check" value="${esc(q.group || '')}"></div>
+            ${q.type === 'number' ? `<div class="tb-row" style="margin-top:8px"><span class="mny-mut">Pass when the value is at least</span>
+                <input class="mny-in" style="width:90px" type="number" data-f="min" value="${esc(q.min == null ? '' : q.min)}" placeholder="e.g. 75">
+                <input class="mny-in" style="width:80px" data-f="unit" value="${esc(q.unit || '')}" placeholder="Unit, e.g. %"></div>`
+              : `<div class="tb-opts">${(q.options || []).map((o, j) => `<span class="tb-opt"><input data-o="${j}" value="${esc(o.t)}" placeholder="Answer">
+                    <button class="tb-ok ${o.ok ? 'y' : 'n'}" data-tg="${j}" title="Tap to change">${o.ok ? '✓ Pass' : '✗ Fail'}</button><button class="tb-x" data-ox="${j}" title="Remove">×</button></span>`).join('')}
+                    <button class="mny-btn mny-s" data-oa>+ Add option</button></div>`}
+          </div>`).join('');
+        const d = dlg('tb-dlg', `<h3 class="mny-h" style="font-size:17px">${ED._idx == null ? 'New test' : 'Edit test'}</h3>
+            <div style="overflow-y:auto;padding-right:2px">
+              <div class="tb-row" style="margin-bottom:10px"><div style="flex:2;min-width:180px"><label class="mny-lbl">Test name</label><input class="mny-in" id="tb-name" placeholder="e.g. Laptop Testing, Mobile Testing, Printer Check" value="${esc(ED.name)}"></div>
+                <div style="flex:1;min-width:150px"><label class="mny-lbl">For products of category</label><select class="mny-in" id="tb-cat">${catOpts}</select></div></div>
+              <p class="mny-mut" style="margin:0 0 10px">Tap an answer's ✓ / ✗ to choose which answers mean OK. An item with any ✗ answer is saved as Faulty and cannot be imported to stock.</p>
+              <div id="tb-qs">${qHtml}</div>
+              <button class="mny-btn" id="tb-addq" style="width:100%">+ Add question</button>
+            </div>
+            <div class="mny-actions"><button class="mny-btn" data-a="x">Cancel</button><button class="mny-btn pri" data-a="ok">Save test</button></div>`, true);
+        const sync = () => {
+            ED.name = $('tb-name').value; ED.category = $('tb-cat').value;
+            d.querySelectorAll('.tb-q').forEach(box => {
+                const q = ED.questions[+box.dataset.q];
+                box.querySelectorAll('[data-f]').forEach(inp => { q[inp.dataset.f] = inp.value; });
+                box.querySelectorAll('[data-o]').forEach(inp => { q.options[+inp.dataset.o].t = inp.value; });
+            });
+        };
+        d.querySelector('[data-a="x"]').onclick = () => { d.remove(); window.sqcManageTests(); };
+        $('tb-addq').onclick = () => { sync(); ED.questions.push({ id: uid(), label: '', group: (ED.questions[ED.questions.length - 1] || {}).group || '', type: 'choice', options: [{ t: 'Ok', ok: true }, { t: 'Not OK', ok: false }] }); drawEditor(); const qs = $('tb-qs'); if (qs && qs.lastElementChild) qs.lastElementChild.scrollIntoView({ block: 'center' }); };
+        d.querySelectorAll('.tb-q').forEach(box => {
+            const i = +box.dataset.q, q = ED.questions[i];
+            box.querySelector('[data-f="type"]').onchange = e => { sync(); q.type = e.target.value; if (q.type === 'number') { if (q.min == null) q.min = ''; } else if (!Array.isArray(q.options) || !q.options.length) q.options = [{ t: 'Ok', ok: true }, { t: 'Not OK', ok: false }]; drawEditor(); };
+            box.querySelectorAll('[data-mv]').forEach(b => b.onclick = () => { sync(); const j = i + +b.dataset.mv; if (j < 0 || j >= ED.questions.length) return; [ED.questions[i], ED.questions[j]] = [ED.questions[j], ED.questions[i]]; drawEditor(); });
+            box.querySelector('[data-rm]').onclick = () => { sync(); if (ED.questions.length < 2) { toast('A test needs at least one question', 'error'); return; } ED.questions.splice(i, 1); drawEditor(); };
+            box.querySelectorAll('[data-tg]').forEach(b => b.onclick = () => { sync(); const o = q.options[+b.dataset.tg]; o.ok = !o.ok; drawEditor(); });
+            box.querySelectorAll('[data-ox]').forEach(b => b.onclick = () => { sync(); if (q.options.length < 3) { toast('Keep at least two answers', 'error'); return; } q.options.splice(+b.dataset.ox, 1); drawEditor(); });
+            const oa = box.querySelector('[data-oa]'); if (oa) oa.onclick = () => { sync(); q.options.push({ t: '', ok: false }); drawEditor(); const ins = d.querySelectorAll(`.tb-q[data-q="${i}"] [data-o]`); if (ins.length) ins[ins.length - 1].focus(); };
+        });
+        d.querySelector('[data-a="ok"]').onclick = () => {
+            sync();
+            const name = ED.name.trim(); if (!name) { toast('Give the test a name', 'error'); $('tb-name').focus(); return; }
+            for (let i = 0; i < ED.questions.length; i++) {
+                const q = ED.questions[i]; q.label = String(q.label || '').trim(); q.group = String(q.group || '').trim();
+                if (!q.label) { toast('Question ' + (i + 1) + ': write the question', 'error'); return; }
+                if (q.type === 'number') { q.min = String(q.min == null ? '' : q.min).trim(); q.unit = String(q.unit || '').trim(); delete q.options; }
+                else {
+                    q.options = (q.options || []).map(o => ({ t: String(o.t || '').trim(), ok: !!o.ok })).filter(o => o.t);
+                    if (q.options.length < 2) { toast('Question ' + (i + 1) + ': give at least two answers', 'error'); return; }
+                    if (!q.options.some(o => o.ok)) { toast('Question ' + (i + 1) + ': mark at least one answer as ✓ Pass', 'error'); return; }
+                    if (new Set(q.options.map(o => o.t.toLowerCase())).size !== q.options.length) { toast('Question ' + (i + 1) + ': two answers have the same text', 'error'); return; }
+                    delete q.min; delete q.unit;
+                }
+            }
+            const a = sqcTpls(), clean = { id: ED.id, name, category: ED.category || '', questions: ED.questions, updatedAt: Date.now() };
+            if (ED._idx == null) a.push(clean); else a[ED._idx] = clean;
+            sqcSaveTpls(a); d.remove(); toast('Test saved – it is ready for stock testing', 'success'); window.sqcManageTests();
+        };
+    }
+
+    /* ================= 2 + 3. BILL: party pending + item list ================= */
+    function partyDue() {
+        const sel = $('inv-party-id'); if (!sel) return null;
+        const v = sel.value; if (v === '' || v === 'custom') return null;
+        const p = (typeof parties !== 'undefined' && parties) ? parties[v] : null; if (!p || !p.supplier) return null;
+        const name = String(p.supplier).trim().toLowerCase();
+        const editing = typeof editingSaleBillId !== 'undefined' && editingSaleBillId != null ? String(editingSaleBillId) : null;
+        const list = (Array.isArray(saleBills) ? saleBills : []).filter(b => b && String(b.customer || '').trim().toLowerCase() === name && String(b.id) !== editing
+            && num(b.balance !== undefined ? b.balance : num(b.total) - num(b.received)) > 0.5);
+        if (!list.length) return null;
+        const tot = list.reduce((t, b) => t + num(b.balance !== undefined ? b.balance : num(b.total) - num(b.received)), 0);
+        const oldest = list.map(b => String(b.date || '')).filter(Boolean).sort()[0] || '';
+        return { tot, n: list.length, oldest };
+    }
+    function drawDue() {
+        const sel = $('inv-party-id'); if (!sel) return;
+        let box = $('inv-party-due');
+        const due = partyDue();
+        if (!due) { if (box) box.remove(); return; }
+        if (!box) { box = document.createElement('div'); box.id = 'inv-party-due'; sel.parentElement.appendChild(box); }
+        box.innerHTML = `<span style="font-size:16px;line-height:1">⚠</span><span><span>Previous pending</span>: <b class="amt no-i18n">${money(due.tot)}</b>
+            <span class="sub"><span class="no-i18n">${due.n}</span> <span>${due.n === 1 ? 'bill' : 'bills'}</span>${due.oldest ? ` · <span>oldest</span> <span class="no-i18n">${esc(fmtDate(due.oldest))}</span>` : ''}</span></span>`;
+    }
+    function ensureItemsCard() {
+        let card = $('inv-items-card'); if (card) return card;
+        const view = $('view-sale-invoice'); if (!view) return null;
+        const left = view.querySelector('.lg\\:col-span-4'); if (!left || !left.children.length) return null;
+        card = document.createElement('div'); card.id = 'inv-items-card'; card.className = 'ii-card';
+        left.insertBefore(card, left.children[1] || null);       // right after "Invoice Header"
+        // "Delete Row" (last row only) is no longer needed – every item has its own Delete
+        const del = [...left.querySelectorAll('button')].find(b => /removeLastItemFromInvoice/.test(b.getAttribute('onclick') || ''));
+        if (del) del.style.display = 'none';
+        return card;
+    }
+    function drawItems() {
+        const card = ensureItemsCard(); if (!card) return;
+        const items = Array.isArray(invoiceItems) ? invoiceItems : [];
+        const editing = typeof editingSaleBillId !== 'undefined' && editingSaleBillId != null;
+        const no = ($('inv-no') || {}).value || '';
+        const total = items.reduce((t, it) => t + num(it.net), 0);
+        card.innerHTML = `<div class="ii-head"><h4>Items in this bill</h4>${editing ? `<span class="ii-tag ed"><span>Editing bill</span> <span class="no-i18n">${esc(no)}</span></span>` : `<span class="ii-tag no-i18n">${items.length}</span>`}</div>
+            ${items.length ? items.map((it, i) => {
+                const sn = it.serial && it.serial !== '---' && it.serial !== '-' ? it.serial : '';
+                return `<div class="ii-row"><span class="ii-n no-i18n">${i + 1}</span>
+                  <div class="ii-main"><b class="no-i18n">${esc(it.name)}</b><small class="no-i18n">${sn ? 'SN ' + esc(sn) + ' · ' : ''}${num(it.qty)} × ${money(it.mrp)}${num(it.itemDisc) > 0 ? ' · disc ' + money(it.itemDisc) : ''}</small></div>
+                  <span class="ii-amt no-i18n">${money(it.net)}</span>
+                  <button type="button" class="ii-btn" data-ie="${i}" title="Edit"><i data-lucide="pencil"></i></button>
+                  <button type="button" class="ii-btn del" data-id="${i}" title="Delete"><i data-lucide="trash-2"></i></button></div>`;
+            }).join('') + `<div class="ii-foot"><span>Items total</span><b class="no-i18n">${money(total)}</b></div>`
+            : `<div class="ii-empty">No items yet – add a row below.</div>`}`;
+        card.querySelectorAll('[data-ie]').forEach(b => b.onclick = () => {
+            editInvoiceItem(+b.dataset.ie);
+            const f = $('inv-qty'); if (f) setTimeout(() => f.scrollIntoView({ behavior: 'smooth', block: 'center' }), 60);
+        });
+        card.querySelectorAll('[data-id]').forEach(b => b.onclick = () => {
+            const it = items[+b.dataset.id]; if (!it) return;
+            if (!confirm(W('Delete this item from the bill?') + '\n\n' + it.name)) return;
+            removeInvoiceItem(+b.dataset.id);
+        });
+        if (window.lucide) lucide.createIcons();
+    }
+    function hookBill() {
+        const f = window.syncInvoicePreview; if (typeof f !== 'function' || f.__v291) return false;
+        const w = function () { const r = f.apply(this, arguments); try { drawDue(); drawItems(); } catch (e) { console.warn('bill extras', e); } return r; };
+        w.__v291 = true; Object.keys(f).forEach(k => { w[k] = f[k]; }); window.syncInvoicePreview = w;
+        return true;
+    }
+
+    /* ================= 4. BACKUP: merge + continue bill numbers ================= */
+    const ARRKEY = {
+        registeredSaleBills: b => ['i:' + b.id, 'n:' + String(b.no || '').trim().toLowerCase() + '|' + (b.date || '')],
+        registeredPurchaseBills: b => ['i:' + b.id, 'n:' + String(b.no || b.billNo || '').trim().toLowerCase() + '|' + String(b.supplier || '').trim().toLowerCase() + '|' + (b.date || '')],
+        registeredParties: p => ['n:' + String(p.supplier || '').trim().toLowerCase()],
+        registeredProducts: p => ['i:' + p.id, 'n:' + String(p.name || '').trim().toLowerCase()],
+        registeredServices: s => ['i:' + s.id, 'n:' + String(s.name || '').trim().toLowerCase()],
+        stockTests: x => ['i:' + x.id]
+    };
+    const ids = (key, o) => (o == null || typeof o !== 'object') ? ['v:' + String(o).trim().toLowerCase()]
+        : (ARRKEY[key] ? ARRKEY[key](o) : (o.id != null ? ['i:' + o.id] : ['j:' + JSON.stringify(o)])).filter(k => !/^i:(undefined|null)$/.test(k) && k !== 'n:' && k !== 'n:|');
+    function parseVal(v) { if (v == null) return null; if (typeof v !== 'string') return v; try { return JSON.parse(v); } catch (e) { return v; } }
+    function mergeVal(key, cur, bak) {
+        if (bak == null) return cur;
+        if (cur == null || cur === '') return bak;
+        if (Array.isArray(cur) && Array.isArray(bak)) {
+            const seen = new Set(); cur.forEach(o => ids(key, o).forEach(k => seen.add(k)));
+            let added = 0; const out = cur.slice();
+            bak.forEach(o => { const k = ids(key, o); if (k.some(x => seen.has(x))) return; k.forEach(x => seen.add(x)); out.push(o); added++; if (key === 'registeredSaleBills') mergeVal.newBills.push(o); });
+            mergeVal.added += added; return out;
+        }
+        if (typeof cur === 'object' && typeof bak === 'object' && !Array.isArray(cur) && !Array.isArray(bak)) {
+            const out = Object.assign({}, bak, cur);
+            Object.keys(bak).forEach(k => { if (cur[k] === '' || cur[k] == null) out[k] = bak[k]; });
+            return out;
+        }
+        return cur;     // plain settings: keep what is already set
+    }
+    mergeVal.added = 0; mergeVal.newBills = [];
+    const fyStr = d => { const m = /^(\d{4})-(\d{2})/.exec(String(d || '')); if (!m) return ''; let y = +m[1]; if (+m[2] < 4) y--; return String(y).slice(2) + '-' + String(y + 1).slice(2); };
+    // the backup's last sale bill decides how the next bill number looks: SE-045 → SE-046
+    function seriesFrom(bills) {
+        const list = (Array.isArray(bills) ? bills : []).filter(b => b && b.no && /\d+\s*$/.test(String(b.no)));
+        if (!list.length) return null;
+        list.sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')) || (parseInt(/(\d+)\s*$/.exec(a.no)[1], 10) - parseInt(/(\d+)\s*$/.exec(b.no)[1], 10)));
+        const last = list[list.length - 1], m = /^(.*?)(\d+)\s*$/.exec(String(last.no).trim());
+        let prefix = m[1]; const digits = m[2].length, n = parseInt(m[2], 10), fy = fyStr(last.date);
+        if (fy && prefix.includes(fy)) prefix = prefix.replace(fy, '{FY}');
+        return { prefix, digits, n, no: String(last.no).trim(), fy };
+    }
+    function applySeries(sr) {
+        if (!sr) return '';
+        let ds = {}; try { ds = JSON.parse(localStorage.getItem('docSettings')) || {}; } catch (e) { }
+        const today = new Date(Date.now() + 5.5 * 3600e3).toISOString().slice(0, 10);
+        const inv = Object.assign({ prefix: 'CC-', digits: 3, start: 1 }, ds.inv || {}, { prefix: sr.prefix, digits: sr.digits });
+        inv.start = sr.fy && sr.fy !== fyStr(today) ? sr.n + 1 : 1;     // backup from an earlier year: keep counting from its last number
+        ds.inv = inv; localStorage.setItem('docSettings', JSON.stringify(ds));
+        const nx = typeof window.generateNextInvoiceNo === 'function' ? window.generateNextInvoiceNo(today) : '';
+        const f = $('inv-no'); if (f && !(typeof editingSaleBillId !== 'undefined' && editingSaleBillId)) f.value = nx;
+        return nx;
+    }
+    function chooseMode() {
+        return new Promise(res => {
+            const d = dlg('bk-dlg', `<h3 class="mny-h" style="font-size:17px">Restore backup</h3>
+                <button class="mny-btn" data-m="merge" style="display:block;width:100%;text-align:left;padding:14px;margin-bottom:10px;border:2px solid #4f46e5">
+                  <b style="display:block;font-size:14px">Merge with my data (recommended)</b>
+                  <span class="mny-mut" style="display:block;margin-top:4px;font-weight:600">Keeps everything you have and adds the bills, parties and products from the file. Bill numbers continue from the backup.</span></button>
+                <button class="mny-btn" data-m="replace" style="display:block;width:100%;text-align:left;padding:14px">
+                  <b style="display:block;font-size:14px;color:#e11d48">Replace all my data</b>
+                  <span class="mny-mut" style="display:block;margin-top:4px;font-weight:600">Deletes the current data and puts the file's data instead.</span></button>
+                <div class="mny-actions"><button class="mny-btn" data-m="">Cancel</button></div>`);
+            d.querySelectorAll('[data-m]').forEach(b => b.onclick = () => { d.remove(); res(b.dataset.m); });
+            d.onclick = e => { if (e.target === d) { d.remove(); res(''); } };
+        });
+    }
+    window.importBackup = function (event) {
+        const input = event.target, file = input.files && input.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = async function (e) {
+            try {
+                const data = JSON.parse(e.target.result);
+                const keys = SB_KEYS.concat(SB_KEYS.includes('stockTests') ? [] : ['stockTests']);
+                if (!data || typeof data !== 'object' || !keys.some(k => data[k] !== undefined && data[k] !== null)) { toast('Invalid Backup File!', 'error'); return; }
+                const mode = await chooseMode(); if (!mode) return;
+                if (mode === 'replace' && !confirm(W('All current data will be REPLACED with the data from this file. Continue?'))) return;
+                mergeVal.added = 0; mergeVal.newBills = [];
+                keys.forEach(key => {
+                    if (key === 'userPerms' && typeof currentSessionRole !== 'undefined' && currentSessionRole !== 'admin') return;
+                    const bak = parseVal(data[key]);
+                    if (mode === 'replace') {
+                        if (bak != null) localStorage.setItem(key, typeof bak === 'string' ? bak : JSON.stringify(bak)); else localStorage.removeItem(key);
+                        return;
+                    }
+                    const cur = parseVal(localStorage.getItem(key)), out = mergeVal(key, cur, bak);
+                    if (out != null && JSON.stringify(out) !== JSON.stringify(cur)) localStorage.setItem(key, typeof out === 'string' ? out : JSON.stringify(out));
+                });
+                const bakBills = parseVal(data.registeredSaleBills);
+                const next = applySeries(seriesFrom(mode === 'merge' && mergeVal.newBills.length ? mergeVal.newBills : bakBills));
+                initializeData(); loadSavedProfile();
+                toast('Saving backup to cloud database...', 'default');
+                await sbFlush();
+                if (sbPending.size) toast('Restored on this device, but cloud save failed. Keep this page open - it will retry automatically.', 'error');
+                else toast((mode === 'merge' ? W('Backup merged') + ' (+' + mergeVal.added + ')' : W('Backup restored and saved to cloud database!')) + (next ? ' · ' + W('Next bill no.') + ' ' + next : ''), 'success');
+                setTimeout(() => showView('view-dashboard'), 1800);
+            } catch (error) { toast('Invalid Backup File!', 'error'); console.error('Import error:', error); }
+            finally { input.value = ''; }
+        };
+        reader.readAsText(file);
+    };
+    // full backup: every saved setting, not only the main lists
+    const oldExport = window.exportBackup;
+    window.exportBackup = function () {
+        try {
+            const out = {}; SB_KEYS.concat(['stockTests', 'appUsers']).forEach(k => { const v = localStorage.getItem(k); if (v != null) out[k] = v; });
+            const blob = new Blob([JSON.stringify(out)], { type: 'application/json' }), url = URL.createObjectURL(blob), a = document.createElement('a');
+            a.style.display = 'none'; a.href = url; a.download = `NexGen_Backup_${new Date().toLocaleDateString().replace(/\//g, '-')}.json`;
+            document.body.appendChild(a); a.click(); setTimeout(() => { a.remove(); URL.revokeObjectURL(url); }, 150);
+            toast('Backup Downloaded Successfully!', 'success');
+        } catch (e) { console.error(e); if (oldExport) oldExport(); }
+    };
+
+    const boot = () => { if (!hookBill()) return setTimeout(boot, 300); };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
+    window.slV291 = { seriesFrom, mergeVal, partyDue };
+})();
+</script>
+
 <script id="sl-i18n">
 
 /* =====================================================================
@@ -14778,6 +15179,71 @@
    ===================================================================== */
 (function () {
     const ROWS = [
+        /* ---- 2.9.1: stock testing, pending due, bill items, backup merge ---- */
+        ["Question, e.g. Display Test", "सवाल, जैसे Display Test", "प्रश्न, उदा. Display Test"],
+        ["Group (optional), e.g. Ports Check", "ग्रुप (वैकल्पिक), जैसे Ports Check", "गट (ऐच्छिक), उदा. Ports Check"],
+        ["Answer", "जवाब", "उत्तर"],
+        ["e.g. 75", "जैसे 75", "उदा. 75"],
+        ["Unit, e.g. %", "यूनिट, जैसे %", "एकक, उदा. %"],
+        ["e.g. Laptop Testing, Mobile Testing, Printer Check", "जैसे Laptop Testing, Mobile Testing, Printer Check", "उदा. Laptop Testing, Mobile Testing, Printer Check"],
+        ["Search product in stock (name / brand)...", "स्टॉक में प्रोडक्ट खोजें (नाम / ब्रांड)...", "स्टॉकमध्ये प्रोडक्ट शोधा (नाव / ब्रँड)..."],
+        ["Tap to change", "बदलने के लिए दबाएं", "बदलण्यासाठी दाबा"],
+        ["Move up", "ऊपर", "वर"],
+        ["Move down", "नीचे", "खाली"],
+        ["Delete question", "सवाल हटाएं", "प्रश्न काढा"],
+        ["Stock Testing", "स्टॉक टेस्टिंग", "स्टॉक टेस्टिंग"],
+        ["Stock QC (stock testing)", "स्टॉक QC (स्टॉक टेस्टिंग)", "Stock QC (स्टॉक टेस्टिंग)"],
+        ["Manage tests", "टेस्ट सेट करें", "टेस्ट ठरवा"],
+        ["Make a test for each kind of stock. You decide the questions, the answers, and which answers mean OK.", "हर तरह के स्टॉक के लिए एक टेस्ट बनाएं। सवाल, जवाब और कौन से जवाब OK हैं – यह आप तय करें।", "प्रत्येक प्रकारच्या स्टॉकसाठी एक टेस्ट बनवा. प्रश्न, उत्तरं आणि कोणती उत्तरं OK – हे तुम्ही ठरवा."],
+        ["questions", "सवाल", "प्रश्न"],
+        ["Any product", "कोई भी प्रोडक्ट", "कोणतंही प्रोडक्ट"],
+        ["+ New test", "+ नया टेस्ट", "+ नवीन टेस्ट"],
+        ["New test", "नया टेस्ट", "नवीन टेस्ट"],
+        ["Edit test", "टेस्ट बदलें", "टेस्ट बदला"],
+        ["Test name", "टेस्ट का नाम", "टेस्टचं नाव"],
+        ["For products of category", "इस कैटेगरी के प्रोडक्ट के लिए", "या कॅटेगरीच्या प्रोडक्टसाठी"],
+        ["Tap an answer's ✓ / ✗ to choose which answers mean OK. An item with any ✗ answer is saved as Faulty and cannot be imported to stock.", "कौन से जवाब OK हैं यह चुनने के लिए ✓ / ✗ दबाएं। जिस आइटम का कोई भी जवाब ✗ है वह Faulty सेव होगा और स्टॉक में नहीं आएगा।", "कोणती उत्तरं OK हे ठरवण्यासाठी ✓ / ✗ दाबा. ज्या आयटमचं एकही उत्तर ✗ असेल तो Faulty सेव होतो आणि स्टॉकमध्ये घेता येत नाही."],
+        ["+ Add question", "+ सवाल जोड़ें", "+ प्रश्न जोडा"],
+        ["+ Add option", "+ जवाब जोड़ें", "+ उत्तर जोडा"],
+        ["Options", "विकल्प", "पर्याय"],
+        ["Number", "नंबर", "नंबर"],
+        ["Pass when the value is at least", "पास तब जब वैल्यू कम से कम हो", "पास जेव्हा किंमत किमान असेल"],
+        ["✓ Pass", "✓ पास", "✓ पास"],
+        ["✗ Fail", "✗ फेल", "✗ फेल"],
+        ["Save test", "टेस्ट सेव करें", "टेस्ट सेव्ह करा"],
+        ["Close", "बंद करें", "बंद करा"],
+        ["Test", "टेस्ट", "टेस्ट"],
+        ["Step 1 · Product Model", "स्टेप 1 · प्रोडक्ट मॉडल", "स्टेप 1 · प्रोडक्ट मॉडेल"],
+        ["No products of this category are in stock yet. Use \"+ New Model\".", "इस कैटेगरी का कोई प्रोडक्ट अभी स्टॉक में नहीं है। \"+ New Model\" इस्तेमाल करें।", "या कॅटेगरीचं कोणतंही प्रोडक्ट अजून स्टॉकमध्ये नाही. \"+ New Model\" वापरा."],
+        ["No tested items are waiting to be imported.", "इम्पोर्ट के लिए कोई टेस्टेड आइटम बाकी नहीं है।", "इम्पोर्टसाठी कोणताही टेस्टेड आयटम बाकी नाही."],
+        ["Tested items", "टेस्टेड आइटम", "टेस्टेड आयटम"],
+        ["No QC records yet. Tap \"New QC Test\" to test an item.", "अभी कोई QC रिकॉर्ड नहीं। आइटम टेस्ट करने के लिए \"New QC Test\" दबाएं।", "अजून QC नोंद नाही. आयटम टेस्ट करण्यासाठी \"New QC Test\" दाबा."],
+        ["Some tests are not OK, so this item will be marked Faulty (it cannot be imported to stock).", "कुछ टेस्ट OK नहीं हैं, इसलिए यह आइटम Faulty होगा (स्टॉक में इम्पोर्ट नहीं होगा)।", "काही टेस्ट OK नाहीत, म्हणून हा आयटम Faulty होईल (स्टॉकमध्ये इम्पोर्ट होणार नाही)."],
+        ["This test has no questions yet. Admin: tap “Manage tests”.", "इस टेस्ट में अभी कोई सवाल नहीं। एडमिन: “Manage tests” दबाएं।", "या टेस्टमध्ये अजून प्रश्न नाहीत. ॲडमिन: “Manage tests” दाबा."],
+        ["Only the admin can change the tests", "टेस्ट सिर्फ एडमिन बदल सकते हैं", "टेस्ट फक्त ॲडमिन बदलू शकतात"],
+        ["Test saved – it is ready for stock testing", "टेस्ट सेव हुआ – स्टॉक टेस्टिंग के लिए तैयार", "टेस्ट सेव्ह झाली – स्टॉक टेस्टिंगसाठी तयार"],
+        ["Test deleted", "टेस्ट डिलीट हुआ", "टेस्ट डिलीट झाली"],
+        ["Give the test a name", "टेस्ट का नाम दें", "टेस्टला नाव द्या"],
+        ["A test needs at least one question", "टेस्ट में कम से कम एक सवाल चाहिए", "टेस्टमध्ये किमान एक प्रश्न हवा"],
+        ["Keep at least two answers", "कम से कम दो जवाब रखें", "किमान दोन उत्तरं ठेवा"],
+        ["Previous pending", "पिछला बकाया", "मागील बाकी"],
+        ["bill", "बिल", "बिल"],
+        ["bills", "बिल", "बिलं"],
+        ["oldest", "सबसे पुराना", "सर्वात जुनं"],
+        ["Items in this bill", "इस बिल के आइटम", "या बिलातील आयटम"],
+        ["Editing bill", "बिल बदल रहे हैं", "बिल बदलत आहे"],
+        ["Items total", "आइटम कुल", "आयटम एकूण"],
+        ["No items yet – add a row below.", "अभी कोई आइटम नहीं – नीचे रो जोड़ें।", "अजून आयटम नाही – खाली रो जोडा."],
+        ["Delete this item from the bill?", "यह आइटम बिल से हटाएं?", "हा आयटम बिलातून काढायचा?"],
+        ["Restore backup", "बैकअप रिस्टोर करें", "बॅकअप रिस्टोअर करा"],
+        ["Merge with my data (recommended)", "मेरे डेटा के साथ जोड़ें (सुझाया गया)", "माझ्या डेटासोबत जोडा (शिफारस)"],
+        ["Keeps everything you have and adds the bills, parties and products from the file. Bill numbers continue from the backup.", "आपका सारा डेटा रहेगा और फाइल के बिल, पार्टी और प्रोडक्ट जुड़ जाएंगे। बिल नंबर बैकअप से आगे चलेंगे।", "तुमचा सगळा डेटा राहतो आणि फाइलमधील बिलं, पार्टी, प्रोडक्ट जोडले जातात. बिल नंबर बॅकअपपासून पुढे चालू राहतात."],
+        ["Replace all my data", "मेरा सारा डेटा बदलें", "माझा सगळा डेटा बदला"],
+        ["Deletes the current data and puts the file's data instead.", "अभी का डेटा हटाकर फाइल का डेटा डालता है।", "सध्याचा डेटा काढून फाइलचा डेटा टाकतो."],
+        ["All current data will be REPLACED with the data from this file. Continue?", "अभी का सारा डेटा इस फाइल के डेटा से बदल जाएगा। आगे बढ़ें?", "सध्याचा सगळा डेटा या फाइलच्या डेटाने बदलेल. पुढे जायचं?"],
+        ["Backup merged", "बैकअप जुड़ गया", "बॅकअप जोडला"],
+        ["Next bill no.", "अगला बिल नं.", "पुढील बिल नं."],
+        ["Pass", "पास", "पास"],
         /* ---- leftovers found by the language scan ---- */
         ["Billing Software", "बिलिंग सॉफ्टवेयर", "बिलिंग सॉफ्टवेअर"],
         ["Admin", "एडमिन", "ॲडमिन"],
