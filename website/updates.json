@@ -2,6 +2,26 @@
  "note": "Release history shown in NexGen Super Admin → Updates. Newest first. Add one entry for every website ZIP.",
  "updates": [
   {
+   "site": "2.4.2",
+   "date": "2026-11-14",
+   "title": "Login works on Jio / Airtel connections that block the database address",
+   "apps": [
+    {
+     "code": "all",
+     "name": "All softwares + Super Admin",
+     "notes": [
+      "Some internet providers block the database address (*.supabase.co): the website opened but login said “No internet”",
+      "Now every software checks this by itself and, when blocked, connects through the website's own address (/sb/) – nothing to set up for the customer",
+      "Works on open networks exactly as before"
+     ]
+    }
+   ],
+   "apk": [
+    "No new APK needed"
+   ],
+   "how": "Upload the ZIP. On a blocked phone the login page reloads once by itself, then login works."
+  },
+  {
    "site": "2.4.1",
    "date": "2026-11-14",
    "title": "Delete customer: Block or Delete permanently",

@@ -20,8 +20,42 @@
   var ICON = new URL(ds.icon || 'icon-192.png', location.href).href;
   var COLOR = ds.color || '#4f46e5';
   var ROOT = new URL('./', me.src || location.href).href;          // site root (this file lives there)
-  var SB = 'https://nqqbduqqiwpaixmrweef.supabase.co';
   var KEY = 'sb_publishable_eKTOE3ywBI9ye02QFVDmvg_231pdTTJ';
+  /* ---- server route ----
+     Some internet providers in India (Jio / Airtel / ACT) block *.supabase.co. The website still
+     opens, but login and data fail ("No internet"). Then every software talks to the database
+     through the website's own address (/sb/ → edge-functions/sb). Checked in the background;
+     the choice is remembered on this device and every software reads window.NGS_SB_URL. */
+  var SB_DIRECT = 'https://nqqbduqqiwpaixmrweef.supabase.co';
+  var SB_PROXY = new URL('./sb', me.src || location.href).href;
+  var ROUTE_KEY = 'ngs-sb-route';
+  var route = null; try { route = localStorage.getItem(ROUTE_KEY); } catch (e) { }
+  var SB = route === 'proxy' ? SB_PROXY : SB_DIRECT;
+  window.NGS_SB_URL = SB;
+  (function probeRoute() {
+    function reach(base, ms) {
+      var ctl = window.AbortController ? new AbortController() : null;
+      var t = setTimeout(function () { if (ctl) ctl.abort(); }, ms);
+      return fetch(base + '/auth/v1/health', { headers: { apikey: KEY }, cache: 'no-store', signal: ctl ? ctl.signal : undefined })
+        .then(function (r) { clearTimeout(t); return r.status > 0 && r.status < 500; }, function () { clearTimeout(t); return false; });
+    }
+    var last = 0; try { last = +localStorage.getItem(ROUTE_KEY + '-at') || 0; } catch (e) { }
+    if (route && Date.now() - last < 6 * 3600e3) return;          // checked recently on this device
+    reach(SB_DIRECT, 6000).then(function (direct) {
+      if (direct) {
+        try { localStorage.setItem(ROUTE_KEY, 'direct'); localStorage.setItem(ROUTE_KEY + '-at', String(Date.now())); } catch (e) { }
+        return;                                                     // (a device that moved back to an open network uses direct from its next start)
+      }
+      return reach(SB_PROXY, 8000).then(function (viaSite) {
+        if (!viaSite) return;                                       // really offline – nothing to change
+        try { localStorage.setItem(ROUTE_KEY, 'proxy'); localStorage.setItem(ROUTE_KEY + '-at', String(Date.now())); } catch (e) { }
+        if (SB !== SB_PROXY) {                                      // this page started on the blocked address → open it again once
+          var k = 'ngs-sb-reloaded'; var done = false; try { done = sessionStorage.getItem(k) === '1'; sessionStorage.setItem(k, '1'); } catch (e) { }
+          if (!done) location.reload();
+        }
+      });
+    });
+  })();
   var STORE = 'nexgen-portal-auth', LIC = 'ngs-lic-' + APP;
   var GATE = APP !== 'portal';
   var OWNLOGIN = GATE && ds.gate === 'off';   // the software has its own login page (e.g. residents of a society); its server checks the plan

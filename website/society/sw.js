@@ -13,7 +13,7 @@ const save = (req, r) => { if (r && r.ok && r.type === 'basic' && !r.redirected)
 const offlinePage = req => caches.match(req, { ignoreSearch: true }).then(r => r || caches.match('./index.html')).then(r => r || caches.match('./'));
 self.addEventListener('fetch', e => {
   const req = e.request, url = new URL(req.url);
-  if (req.method !== 'GET' || url.hostname.endsWith('supabase.co')) return;   // never cache data calls
+  if (req.method !== 'GET' || url.hostname.endsWith('supabase.co') || (url.origin === location.origin && url.pathname.startsWith('/sb/'))) return;   // never cache data calls
   if (req.cache === 'no-store' || url.searchParams.has('vcheck')) return;     // update checks always go straight to the server
   if (req.mode === 'navigate') {                                              // opening the app: network first, offline copy as fallback
     e.respondWith(fetch(req).then(r => save(req, r)).catch(() => offlinePage(req)));

@@ -6,7 +6,7 @@
 <title>NexGen Softwares</title>
 <meta name="theme-color" content="#1e1b4b">
 <link rel="manifest" href="manifest.json?v=203">
-<script src="../nexgen-app.js" data-app="portal" data-version="2.3.1" data-name="NexGen Softwares" data-icon="../icon-192.png?v=211" data-color="#4f46e5"></script>
+<script src="../nexgen-app.js" data-app="portal" data-version="2.3.2" data-name="NexGen Softwares" data-icon="../icon-192.png?v=211" data-color="#4f46e5"></script>
 <link rel="icon" href="../logo/mark.svg" type="image/svg+xml"><link rel="icon" href="../favicon-32.png" sizes="32x32">
 <link rel="apple-touch-icon" href="../apple-touch-icon.png">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
@@ -254,9 +254,9 @@ pre.code{background:#0f172a;color:#e2e8f0;padding:14px;border-radius:12px;overfl
 /* =====================================================================
    NexGen Softwares – Super Admin & Customer Portal
    ===================================================================== */
-const APP_VERSION = '2.3.1';
+const APP_VERSION = '2.3.2';
 const AREA = /\/admin\//.test(location.pathname) ? 'admin' : 'portal';
-const SUPABASE_URL = 'https://nqqbduqqiwpaixmrweef.supabase.co';
+const SUPABASE_URL = window.NGS_SB_URL || 'https://nqqbduqqiwpaixmrweef.supabase.co';   // NexGen server route (see nexgen-app.js)
 const SUPABASE_KEY = 'sb_publishable_eKTOE3ywBI9ye02QFVDmvg_231pdTTJ';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: { persistSession: true, autoRefreshToken: true, storageKey: 'nexgen-portal-auth' }

@@ -272,7 +272,7 @@
     };
     // ---------- Supabase ----------
     // NexGen Softwares cloud: one login on the main link, every shop's data locked to its own login (row level security)
-    const sb = supabase.createClient('https://nqqbduqqiwpaixmrweef.supabase.co', 'sb_publishable_eKTOE3ywBI9ye02QFVDmvg_231pdTTJ',
+    const sb = supabase.createClient(window.NGS_SB_URL || 'https://nqqbduqqiwpaixmrweef.supabase.co', 'sb_publishable_eKTOE3ywBI9ye02QFVDmvg_231pdTTJ',
       { auth: { persistSession: true, autoRefreshToken: true, storage: window.localStorage, storageKey: 'nexgen-portal-auth' } });
     const TBL = { profiles: 'lm_profiles', leads: 'lm_leads', tasks: 'lm_tasks', settings: 'lm_settings', products: 'lm_products', lead_sends: 'lm_sends', app_clients: 'lm_clients' };
     const ON = { leads: 'tenant,id', tasks: 'tenant,id', settings: 'tenant,key', products: 'tenant,id', lead_sends: 'tenant,lead_id,item', app_clients: 'auth_id,platform' };

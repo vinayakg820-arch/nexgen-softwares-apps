@@ -315,7 +315,7 @@ async function natOpen(){const P=MP();if(!P||!TK)return;try{const r=await P.take
 if(NATUA)setInterval(()=>{if(TK&&!document.hidden&&$('ng').hidden)natOpen()},2000);
 async function nsave(blob,fn,text){const FS=capP('Filesystem'),SH=capP('Share');if(!FS||!SH)throw new Error('Saving files is not available in this app version');const b64=await new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok(String(r.result).split(',')[1]);r.onerror=no;r.readAsDataURL(blob)});const w=await FS.writeFile({path:fn,data:b64,directory:'CACHE'});await SH.share({title:fn,text:text||'',files:[w.uri],dialogTitle:'Share or save'})}
 /* Cloud sync (Supabase Edge Function) */
-const API='https://nqqbduqqiwpaixmrweef.supabase.co/functions/v1/mauli-coaching';   // NexGen Softwares cloud
+const API=(window.NGS_SB_URL||'https://nqqbduqqiwpaixmrweef.supabase.co')+'/functions/v1/mauli-coaching';   // NexGen Softwares cloud
 let TK=null,CODE=localStorage.getItem('cs_code')||'',NEEDS=false,CNAME='',CODEV='',SYNC={},dirty=false,pt,polling;
 const sn=o=>JSON.stringify(o);
 async function api(a,d={}){let r,j;try{r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({a,t:TK,...d})});j=await r.json()}catch(e){throw new Error('Cannot reach the server. Check your internet.')}
